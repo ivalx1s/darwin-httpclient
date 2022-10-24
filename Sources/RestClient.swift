@@ -27,7 +27,7 @@ public struct ApiResponse {
     }
 }
 
-public protocol IApiFetcher {
+public protocol IRestClient {
 
     func get(
             path: String,
@@ -121,7 +121,7 @@ public protocol IApiFetcher {
 
 }
 
-public class ApiFetcher: IApiFetcher {
+public class RestClient: IRestClient {
     private let session: URLSession
 
     public init(session: URLSession) {
@@ -683,7 +683,7 @@ public class ApiFetcher: IApiFetcher {
 
 }
 
-extension ApiFetcher {
+extension RestClient {
     private func create_cURL(requestType: ApiRequestType, path: URL, headers: [HeaderKey: HeaderValue], bodyData: Data?) -> String {
         let string = """
                      curl -vX "\(requestType.rawValue)" "\(path.description)" \\
