@@ -5,6 +5,7 @@ import Foundation
 internal extension os.Logger {
     /// A logger instance that logs to '🔤Default' category within host app subsystem.
 	static let `default` = os.Logger(subsystem: bundle.bundleIdentifier!, category: "🔤Default")
+    static let api = os.Logger(subsystem: Bundle.main.bundleIdentifier!, category: "↕️ API")
 }
 
 /// A proxy type to work around apple os log [limitations](https://stackoverflow.com/questions/62675874/xcode-12-and-oslog-os-log-wrapping-oslogmessage-causes-compile-error-argumen#63036815).
@@ -13,8 +14,6 @@ internal extension os.Logger {
 internal enum _OSLogPrivacy: Equatable {
     case  auto, `public`, `private`, sensitive
 }
-
-
 
 internal func log(
     _ message: String,
