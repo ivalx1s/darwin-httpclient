@@ -1,0 +1,40 @@
+import Foundation
+
+extension RestClient {
+    func buildRequest(url: URL, type: ApiRequestType, headers: [HeaderKey: HeaderValue], bodyData: Data?) -> URLRequest {
+        var request = URLRequest(url: url)
+
+        request.httpMethod = type.rawValue
+
+        headers.forEach {
+            request.setValue($0.value, forHTTPHeaderField: $0.key)
+        }
+
+        switch type {
+        case .post, .put, .delete:
+            request.httpBody = bodyData
+        default:
+            break
+        }
+
+        return request
+    }
+
+    func buildRequestUrl(path: String, queryParams: [ParamKey: ParamValue]) -> URL? {
+        guard let encodedPath = path.addingPercentEncoding(withAllowedCharacters: .rfc3986Unreserved) else {
+            return nil
+        }
+        guard var urlComponents = URLComponents(string: encodedPath) else {
+            return nil
+        }
+
+        if !queryParams.isEmpty {
+            urlComponents.percentEncodedQuery = urlComponents.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
+            urlComponents.queryItems = queryParams
+                    .sorted { $0.key < $1.key }
+                    .map { URLQueryItem(name: $0.key, value: $0.value) }
+        }
+
+        return urlComponents.url
+    }
+}
