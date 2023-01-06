@@ -1,6 +1,7 @@
 import Foundation
 
 extension RestClient {
+
     public func performAsync(
             endpoint: ApiEndpoint,
             headers: [HeaderKey: HeaderValue],
@@ -62,6 +63,58 @@ extension RestClient {
             queryParams: [ParamKey: ParamValue]
     ) async -> Result<ApiResponse, ApiError> {
         await request(type: .delete, path: path, headers: headers, queryParams: queryParams)
+    }
+
+    public func request(url: URL) async -> Result<ApiResponse, ApiError> {
+        let request = buildRequest(url: url, type: .get, headers: [:], bodyData: nil)
+        let cURL = create_cURL(requestType: .get, path: url, headers: [:], bodyData: nil)
+        log("\("🟡 beginning \(ApiRequestType.get) \(url.description)")\n\(cURL)", category: .api)
+
+        do {
+            let (data, response) = try await session.data(for: request)
+
+            guard let response = response as? HTTPURLResponse else {
+                throw ApiError(
+                        sender: self,
+                        url: url.absoluteString,
+                        responseCode: 0,
+                        message: "no response: \(self.stringifyData(data: data))",
+                        data: data,
+                        requestType: .get,
+                        headers: [:],
+                        params: [:]
+                )
+            }
+
+            if response.statusCode < 200 || response.statusCode >= 300 {
+                throw ApiError(
+                        sender: self,
+                        url: url.absoluteString,
+                        responseCode: response.statusCode,
+                        message: "bad response: \(self.stringifyData(data: data))",
+                        data: data,
+                        requestType: .get,
+                        headers: [:],
+                        params: [:]
+                )
+            } else if response.statusCode == 204 {
+                let apiResponse =  ApiResponse(data: nil, headers: response.allHeaderFields, code: response.statusCode)
+                log("🟢 successful   \(ApiRequestType.get) \(url.description) \nresponse data: nil \nheaders: \(apiResponse.headers)\n", category: .api)
+                return .success(apiResponse)
+            }
+
+            let apiResponse = ApiResponse(data: data, headers: response.allHeaderFields, code: response.statusCode)
+            log("🟢 successful   \(ApiRequestType.get) \(url.description) \nresponse data: \(data.utf8 ?? "") \nheaders: \(apiResponse.headers)\n", category: .api)
+            return .success(apiResponse)
+        } catch let error as ApiError {
+            log("🔴 unsuccessful \(ApiRequestType.get) \(url.description) \nerror: \(error.localizedDescription)", category: .api)
+            return .failure(error)
+        } catch {
+            log("🔴 unsuccessful \(ApiRequestType.get) \(url.description) \nerror: \(error.localizedDescription)", category: .api)
+            return .failure(
+                    ApiError(sender: self, endpoint: .init(path: url.description, type: .get))
+            )
+        }
     }
 
     private func request(

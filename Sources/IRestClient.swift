@@ -2,6 +2,9 @@ import Foundation
 import Combine
 
 public protocol IRestClient {
+
+    func request(url: URL) async -> Result<ApiResponse, ApiError>
+
     func performAsync(
             endpoint: ApiEndpoint,
             headers: [HeaderKey: HeaderValue],
