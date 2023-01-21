@@ -107,10 +107,10 @@ extension RestClient {
             log("🟢 successful   \(ApiRequestType.get) \(url.description) \nresponse data: \(data.utf8 ?? "") \nheaders: \(apiResponse.headers)\n", category: .api)
             return .success(apiResponse)
         } catch let error as ApiError {
-            log("🔴 unsuccessful \(ApiRequestType.get) \(url.description) \nerror: \(error.localizedDescription)", category: .api)
+            log("🔴 fail \(ApiRequestType.get) \(url.description) \nerror: \(error.localizedDescription)", category: .api)
             return .failure(error)
         } catch {
-            log("🔴 unsuccessful \(ApiRequestType.get) \(url.description) \nerror: \(error.localizedDescription)", category: .api)
+            log("🔴 fail \(ApiRequestType.get) \(url.description) \nerror: \(error.localizedDescription)", category: .api)
             return .failure(
                     ApiError(sender: self, endpoint: .init(path: url.description, type: .get))
             )
@@ -179,10 +179,10 @@ extension RestClient {
             return .success(apiResponse)
 
         } catch let error as ApiError {
-            log("🔴 unsuccessful \(type) \(path) \nerror: \(error.localizedDescription)", category: .api)
+            log("🔴 fail \(type) \(path) \nerror: \(error.responseCode): \(error.localizedDescription)", category: .api)
             return .failure(error)
         } catch {
-            log("🔴 unsuccessful \(type) \(path) \nerror: \(error.localizedDescription)", category: .api)
+            log("🔴 fail \(type) \(path) \nerror: \(error.localizedDescription)", category: .api)
             return .failure(
                     ApiError(sender: self, endpoint: .init(path: path, type: type))
             )

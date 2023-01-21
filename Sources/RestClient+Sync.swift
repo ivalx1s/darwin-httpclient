@@ -180,7 +180,7 @@ extension RestClient {
             log("🟢 successful   \(type) \(path) \nresponse data: \(response.data?.utf8 ?? "") \nheaders: \(response.headers)\n", category: .api)
 
         case .failure(let error):
-            log("🔴 unsuccessful \(type) \(path) \nerror: \(error.toString())", category: .api)
+            log("🔴 failed \(type) \(path) \nerror: \(error.toString())", category: .api)
         case .none:
             break
         }

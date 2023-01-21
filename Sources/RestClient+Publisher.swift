@@ -133,10 +133,10 @@ extension RestClient {
                     // handle specific errors
 
                     if let error = error as? ApiError {
-                        log("🔴 unsuccessful \(type) \(path) \nerror: \(error.toString())", category: .api)
+                        log("🔴 fail \(type) \(path) \nerror: \(error.toString())", category: .api)
                         return error
                     } else {
-                        log("🔴 unsuccessful \(type) \(path) \nerror: \(error.localizedDescription)", category: .api)
+                        log("🔴 fail \(type) \(path) \nerror: \(error.localizedDescription)", category: .api)
                         return ApiError(
                                 sender: self,
                                 url: url.absoluteString,
