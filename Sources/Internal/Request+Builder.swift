@@ -1,7 +1,13 @@
 import Foundation
 
-extension RestClient {
-    func buildRequest(url: URL, type: ApiRequestType, headers: [HeaderKey: HeaderValue], bodyData: Data?) -> URLRequest {
+protocol IRequestBuilder {
+    func buildRpcRequest(url: URL, type: ApiRequestType, headers: [HeaderKey: HeaderValue], bodyData: Data?) -> URLRequest
+    func buildWSRequest(url: URL, headers: [HeaderKey: HeaderValue]) -> URLRequest
+    func buildRequestUrl(path: String, queryParams: [ParamKey: ParamValue]) -> URL?
+}
+
+extension IRequestBuilder {
+    func buildRpcRequest(url: URL, type: ApiRequestType, headers: [HeaderKey: HeaderValue], bodyData: Data?) -> URLRequest {
         var request = URLRequest(url: url)
 
         request.httpMethod = type.rawValue
@@ -15,6 +21,16 @@ extension RestClient {
             request.httpBody = bodyData
         default:
             break
+        }
+
+        return request
+    }
+
+    func buildWSRequest(url: URL, headers: [HeaderKey: HeaderValue]) -> URLRequest {
+        var request = URLRequest(url: url)
+
+        headers.forEach {
+            request.setValue($0.value, forHTTPHeaderField: $0.key)
         }
 
         return request

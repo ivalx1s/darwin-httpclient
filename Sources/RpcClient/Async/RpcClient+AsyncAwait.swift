@@ -1,11 +1,11 @@
 import Foundation
 
-extension RestClient {
+extension RpcClient {
 
     public func performAsync(
             endpoint: ApiEndpoint,
-            headers: [HeaderKey: HeaderValue],
-            queryParams: [ParamKey: ParamValue],
+            headers: Headers,
+            queryParams: QueryParams,
             bodyData: Data?
     ) async -> Result<ApiResponse, ApiError> {
         switch endpoint.type {
@@ -24,16 +24,16 @@ extension RestClient {
 
     public func get(
             path: String,
-            headers: [HeaderKey: HeaderValue],
-            queryParams: [ParamKey: ParamValue]
+            headers: Headers,
+            queryParams: QueryParams
     ) async -> Result<ApiResponse, ApiError> {
         await request(type: .get, path: path, headers: headers, queryParams: queryParams)
     }
 
     public func post(
             path: String,
-            headers: [HeaderKey: HeaderValue],
-            queryParams: [ParamKey: ParamValue],
+            headers: Headers,
+            queryParams: QueryParams,
             bodyData: Data?
     ) async -> Result<ApiResponse, ApiError> {
         await request(type: .post, path: path, headers: headers, queryParams: queryParams, bodyData: bodyData)
@@ -41,8 +41,8 @@ extension RestClient {
 
     public func put(
             path: String,
-            headers: [HeaderKey: HeaderValue],
-            queryParams: [ParamKey: ParamValue],
+            headers: Headers,
+            queryParams: QueryParams,
             bodyData: Data?
     ) async -> Result<ApiResponse, ApiError> {
         await request(type: .put, path: path, headers: headers, queryParams: queryParams, bodyData: bodyData)
@@ -50,8 +50,8 @@ extension RestClient {
 
     public func delete(
             path: String,
-            headers: [HeaderKey: HeaderValue],
-            queryParams: [ParamKey: ParamValue],
+            headers: Headers,
+            queryParams: QueryParams,
             bodyData: Data?
     ) async -> Result<ApiResponse, ApiError> {
         await request(type: .delete, path: path, headers: headers, queryParams: queryParams, bodyData: bodyData)
@@ -59,14 +59,14 @@ extension RestClient {
 
     public func head(
             path: String,
-            headers: [HeaderKey: HeaderValue],
-            queryParams: [ParamKey: ParamValue]
+            headers: Headers,
+            queryParams: QueryParams
     ) async -> Result<ApiResponse, ApiError> {
         await request(type: .delete, path: path, headers: headers, queryParams: queryParams)
     }
 
     public func request(url: URL) async -> Result<ApiResponse, ApiError> {
-        let request = buildRequest(url: url, type: .get, headers: [:], bodyData: nil)
+        let request = buildRpcRequest(url: url, type: .get, headers: [:], bodyData: nil)
         let cURL = create_cURL(requestType: .get, path: url, headers: [:], bodyData: nil)
         log("\("🟡 beginning \(ApiRequestType.get) \(url.description)")\n\(cURL)", category: .api)
 
@@ -137,7 +137,7 @@ extension RestClient {
                 )
             }
 
-            let request = buildRequest(url: url, type: type, headers: headers, bodyData: bodyData)
+            let request = buildRpcRequest(url: url, type: type, headers: headers, bodyData: bodyData)
 
             let cURL = create_cURL(requestType: type, path: url, headers: headers, bodyData: bodyData)
             log("\("🟡 beginning   \(type) \(path)")\n\(cURL)", category: .api)

@@ -1,6 +1,6 @@
 import Foundation
 
-extension RestClient {
+extension RpcClient {
     public func get(
             path: String,
             headers: [HeaderKey: HeaderValue] = [:],

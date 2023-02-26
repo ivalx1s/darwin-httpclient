@@ -34,8 +34,8 @@ public struct ApiError: Error {
             data: Data? = nil,
             violation: ErrorViolation = .warning,
             error: Error? = nil,
-            headers: [HeaderKey: HeaderValue] = [:],
-            params: [ParamKey: ParamValue] = [:]
+            headers: Headers = [:],
+            params: QueryParams = [:]
     ) {
         self.init(
                 sender: sender,
@@ -60,8 +60,8 @@ public struct ApiError: Error {
             violation: ErrorViolation = .warning,
             error: Error? = nil,
             requestType: ApiRequestType,
-            headers: [HeaderKey: HeaderValue] = [:],
-            params: [ParamKey: ParamValue] = [:]
+            headers: Headers = [:],
+            params: QueryParams = [:]
     ) {
         self.sender = Mirror(reflecting: sender).subjectType
         self.url = url

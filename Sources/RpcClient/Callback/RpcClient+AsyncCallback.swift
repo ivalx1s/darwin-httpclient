@@ -1,6 +1,6 @@
 import Foundation
 
-extension RestClient {
+extension RpcClient: IRequestBuilder {
     public func get(
             path: String,
             headers: [HeaderKey: HeaderValue] = [:],
@@ -90,7 +90,7 @@ extension RestClient {
             return
         }
 
-        let request = buildRequest(url: url, type: type, headers: headers, bodyData: bodyData)
+        let request = buildRpcRequest(url: url, type: type, headers: headers, bodyData: bodyData)
 
         let task = session.dataTask(with: request) { data, response, error in
             if let error = error {

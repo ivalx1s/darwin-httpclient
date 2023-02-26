@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-extension RestClient {
+extension RpcClient {
     public func perform(
             endpoint: ApiEndpoint,
             headers: [HeaderKey: HeaderValue],
@@ -87,7 +87,7 @@ extension RestClient {
                     .eraseToAnyPublisher()
         }
 
-        let request = buildRequest(url: url, type: type, headers: headers, bodyData: bodyData)
+        let request = buildRpcRequest(url: url, type: type, headers: headers, bodyData: bodyData)
 
         let cURL = create_cURL(requestType: type, path: url, headers: headers, bodyData: bodyData)
         log("\("🟡 beginning   \(type) \(path)")\n\(cURL)", category: .api)

@@ -1,6 +1,6 @@
 import Foundation
 
-extension RestClient {
+extension RpcClient {
     func create_cURL(requestType: ApiRequestType, path: URL, headers: [HeaderKey: HeaderValue], bodyData: Data?) -> String {
         let string = """
                      curl -vX "\(requestType.rawValue)" "\(path.description)" \\
