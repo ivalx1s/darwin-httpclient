@@ -15,6 +15,15 @@ public actor WSClient: IWSClient, IRequestBuilder {
         self.urlSession = urlSession
     }
 
+    public init(
+        sessionConfig: URLSessionConfiguration = ApiSessionConfigBuilder.buildConfig(
+            timeoutForResponse: 20,
+            timeoutResourceInterval: 120
+        )
+    ) {
+        self.urlSession = URLSession(configuration: sessionConfig)
+    }
+
     public func connect(to urlPath : String, with headers: Headers) async -> Result<AsyncStream<Result<Data, WSClientError>>, WSClientError> {
         guard let url = buildRequestUrl(path: urlPath, queryParams: [:]) else {
             return .failure(WSClientError.failedToBuildRequest(forUrlPath: urlPath))
@@ -44,12 +53,15 @@ public actor WSClient: IWSClient, IRequestBuilder {
     private func streamMessages() -> AsyncStream<Result<Data, WSClientError>>  {
         AsyncStream { continuation in
             Task {
-                while let webSocketTask,
-                      webSocketTask.closeCode != .goingAway {
-                    let msg = await awaitNextMessage()
-                    continuation.yield(msg)
+                while let webSocketTask {
+                    guard webSocketTask.closeCode == .invalid else {
+                        print(">>>> websocket: connection closed \(webSocketTask.closeCode)")
+                        continuation.finish()
+                        return
+                    }
+
+                    continuation.yield(await awaitNextMessage())
                 }
-                continuation.finish()
             }
         }
     }
