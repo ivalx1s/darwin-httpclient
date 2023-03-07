@@ -23,7 +23,7 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
     public init(
         sessionConfig: URLSessionConfiguration = ApiSessionConfigBuilder.buildConfig(
             timeoutForResponse: 20,
-            timeoutResourceInterval: 120
+            timeoutResourceInterval: 20
         )
     ) {
         self.sessionConfig = sessionConfig
@@ -56,6 +56,7 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
     private func reconnect() async {
          switch keepConnected {
          case let .on(url, headers):
+             webSocketTask?.cancel()
              _ = await connect(to: url, with: headers)
          case .off: break
          }
