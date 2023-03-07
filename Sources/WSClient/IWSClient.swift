@@ -81,7 +81,8 @@ public actor WSClient: IWSClient, IRequestBuilder {
                 return .failure(.failedToReceiveMsg_UnsupportedMsgType(type: msg))
             }
         } catch {
-            return .failure(.failedToReceiveMsg(cause: error))
+           await disconnect()
+            return .failure(.disconnected)
         }
     }
 
@@ -93,7 +94,7 @@ public actor WSClient: IWSClient, IRequestBuilder {
             try await webSocketTask.send(msg)
             return .success(())
         } catch {
-            return .failure(.failedToSend(msg: msg))
+            return .failure(.failedToSend(msg: msg, cause: error))
         }
     }
 }
