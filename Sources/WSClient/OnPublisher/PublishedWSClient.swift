@@ -2,19 +2,34 @@ import Foundation
 import Combine
 
 public protocol IPublishedWSClient {
-    func connect(to urlPath : String, with headers: @escaping ()->Headers) -> Result<Void, WSClientError>
-    func connect(to urlPath : String) -> Result<Void, WSClientError>
-    func disconnect()
+    func connect(to urlPath : String, with headers: @escaping ()async->Headers) async -> Result<Void, WSClientError>
+    func connect(to urlPath : String) async -> Result<Void, WSClientError>
+    func disconnect() async
     func send(_ message: String) async -> Result<Void, WSClientError>
     func send(_ data: Data) async -> Result<Void, WSClientError>
-    var msgPublisher: AnyPublisher<Result<Data?, WSClientError>, Never> { get }
+    var msgPublisher: AnyPublisher<Result<Data?, WSClientError>, Never> { get async }
 }
 
-public class PublishedWSClient: NSObject, IPublishedWSClient, IRequestBuilder {
+extension PublishedWSClient {
+    class UrlSessionDelegate: NSObject, URLSessionWebSocketDelegate {
+        public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
+            print(">>> ws didOpenWithProtocol \(`protocol` ?? "")")
+        }
+
+        public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
+            print(">>> ws didCloseWith \(closeCode) \(reason?.utf8 ?? "")")
+        }
+    }
+}
+
+extension PublishedWSClient {
     enum KeepConnected {
-        case on(url: String, headers: ()->Headers)
+        case on(url: String, headers: ()async->Headers)
         case off
     }
+}
+
+public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
     private var webSocketTask: URLSessionWebSocketTask?
     @Published private var keepConnected: KeepConnected = .off
     private var keepAliveSubscription: AnyCancellable?
@@ -22,8 +37,7 @@ public class PublishedWSClient: NSObject, IPublishedWSClient, IRequestBuilder {
 
     public init(pingInterval: UInt32 = 10) {
         self.pingDelay = pingInterval
-        super.init()
-        self.keepAlivePipeline()
+        Task { await self.keepAlivePipeline() }
     }
 
     deinit {
@@ -31,19 +45,21 @@ public class PublishedWSClient: NSObject, IPublishedWSClient, IRequestBuilder {
     }
 
     private var msgSubj = PassthroughSubject<Result<Data?, WSClientError>, Never>()
-    public var msgPublisher: AnyPublisher<Result<Data?, WSClientError>, Never> { msgSubj.eraseToAnyPublisher() }
-
-    public func connect(to urlPath : String) -> Result<Void, WSClientError> {
-        connect(to: urlPath, with: {[:]})
+    public var msgPublisher: AnyPublisher<Result<Data?, WSClientError>, Never> {
+        get async { msgSubj.eraseToAnyPublisher() }
     }
 
-    public func connect(to urlPath : String, with headers: @escaping ()->Headers) -> Result<Void, WSClientError> {
+    public func connect(to urlPath : String) async -> Result<Void, WSClientError> {
+        await connect(to: urlPath, with: {[:]})
+    }
+
+    public func connect(to urlPath : String, with headers: @escaping ()async->Headers) async -> Result<Void, WSClientError> {
         guard let url = buildRequestUrl(path: urlPath, queryParams: [:]) else {
             return .failure(WSClientError.failedToBuildRequest(forUrlPath: urlPath))
         }
 
-        let request = buildWSRequest(url: url, headers: headers())
-        let urlSession = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
+        let request = buildWSRequest(url: url, headers: await headers())
+        let urlSession = URLSession(configuration: .default, delegate: UrlSessionDelegate(), delegateQueue: nil)
 
         self.keepConnected = .on(url: urlPath, headers: headers)
         webSocketTask = urlSession.webSocketTask(with: request)
@@ -57,12 +73,12 @@ public class PublishedWSClient: NSObject, IPublishedWSClient, IRequestBuilder {
          switch keepConnected {
          case let .on(url, headers):
              webSocketTask?.cancel()
-             _ = connect(to: url, with: headers)
+             _ = await connect(to: url, with: headers)
          case .off: break
          }
     }
 
-    public func disconnect() {
+    public func disconnect() async {
         keepConnected = .off
         webSocketTask?.cancel(with: .goingAway, reason: nil)
         webSocketTask = nil
@@ -83,8 +99,9 @@ public class PublishedWSClient: NSObject, IPublishedWSClient, IRequestBuilder {
             .sink { _ in
                 Task { [weak self] in
                     guard let self else { return }
-                    guard case .on = self.keepConnected else { return }
-                    self.sendPing()
+                    guard case .on = await self.keepConnected
+                    else { return }
+                    await self.sendPing()
                 }
             }
     }
@@ -154,15 +171,5 @@ public class PublishedWSClient: NSObject, IPublishedWSClient, IRequestBuilder {
             print(">>> ws message send failed: \(msg) \(error)")
             return .failure(.failedToSend(msg: msg, cause: error))
         }
-    }
-}
-
-extension PublishedWSClient: URLSessionWebSocketDelegate {
-    public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
-        print(">>> ws didOpenWithProtocol \(`protocol` ?? "")")
-    }
-
-    public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
-        print(">>> ws didCloseWith \(closeCode) \(reason?.utf8 ?? "")")
     }
 }
