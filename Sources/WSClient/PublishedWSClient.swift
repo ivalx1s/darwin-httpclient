@@ -34,9 +34,18 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
     @Published private var keepConnected: KeepConnected = .off
     private var keepAliveSubscription: AnyCancellable?
     private let pingDelay: UInt32
+    private let sessionConfig: URLSessionConfiguration
+    private let delegate = UrlSessionDelegate()
 
-    public init(pingInterval: UInt32 = 10) {
+    public init(
+        pingInterval: UInt32 = 10,
+        sessionConfig: URLSessionConfiguration? = nil
+    ) {
         self.pingDelay = pingInterval
+        self.sessionConfig = sessionConfig ?? ApiSessionConfigBuilder.buildConfig(
+            timeoutForResponse: 120,
+            timeoutResourceInterval: 604800
+        )
         Task { await self.keepAlivePipeline() }
     }
 
@@ -59,7 +68,7 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
         }
 
         let request = buildWSRequest(url: url, headers: await headers())
-        let urlSession = URLSession(configuration: .default, delegate: UrlSessionDelegate(), delegateQueue: nil)
+        let urlSession = URLSession(configuration: sessionConfig, delegate: delegate, delegateQueue: nil)
 
         self.keepConnected = .on(url: urlPath, headers: headers)
         webSocketTask = urlSession.webSocketTask(with: request)
