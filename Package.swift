@@ -4,21 +4,21 @@ import PackageDescription
 
 
 let package = Package(
-    name: "darwin-restclient",
+    name: "darwin-httpclient",
 	platforms: [
-		.iOS(.v14),
+		.iOS(.v15),
 		.watchOS(.v7),
 		.macOS(.v11)
 	],
     products: [
         .library(
-            name: "RestClient",
-            targets: ["RestClient"]
+            name: "HttpClient",
+            targets: ["HttpClient"]
 		),
     ],
     targets: [
         .target(
-            name: "RestClient",
+            name: "HttpClient",
             dependencies: [],
 			path: "Sources"
 		)

@@ -4,6 +4,7 @@ import Combine
 public protocol IPublishedWSClient {
     func connect(to urlPath : String, with headers: @escaping ()async->Headers) async -> Result<Void, WSClientError>
     func connect(to urlPath : String) async -> Result<Void, WSClientError>
+    func reconnect() async
     func disconnect() async
     func send(_ message: String) async -> Result<Void, WSClientError>
     func send(_ data: Data) async -> Result<Void, WSClientError>
@@ -13,11 +14,11 @@ public protocol IPublishedWSClient {
 extension PublishedWSClient {
     class UrlSessionDelegate: NSObject, URLSessionWebSocketDelegate {
         public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
-            print(">>> ws didOpenWithProtocol \(`protocol` ?? "")")
+            log(">>> ws didOpenWithProtocol \(`protocol` ?? "")")
         }
 
         public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
-            print(">>> ws didCloseWith \(closeCode) \(reason?.utf8 ?? "")")
+            log(">>> ws didCloseWith \(closeCode) \(reason?.utf8 ?? "")")
         }
     }
 }
@@ -67,7 +68,12 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
             return .failure(WSClientError.failedToBuildRequest(forUrlPath: urlPath))
         }
 
-        let request = buildWSRequest(url: url, headers: await headers())
+        let authHeaders = await headers()
+        guard !authHeaders.isEmpty else {
+            return .failure(.failedToConnect_noHeaders)
+        }
+
+        let request = buildWSRequest(url: url, headers: authHeaders)
         let urlSession = URLSession(configuration: sessionConfig, delegate: delegate, delegateQueue: nil)
 
         self.keepConnected = .on(url: urlPath, headers: headers)
@@ -78,7 +84,7 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
         return .success(())
     }
 
-    private func reconnect() async {
+    public func reconnect() async {
          switch keepConnected {
          case let .on(url, headers):
              webSocketTask?.cancel()
@@ -119,9 +125,9 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
         webSocketTask?.sendPing { [weak self] err in
             switch err {
             case .none:
-                print(">>> ws ping")
+                log(">>> ws ping")
             case let .some(err):
-                print(">>> ws ping err: \(err)")
+                log(">>> ws ping err: \(err)")
                 Task { [weak self] in
                     await self?.reconnect()
                 }
@@ -133,14 +139,14 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
         Task {
             while let webSocketTask {
                 guard webSocketTask.closeCode == .invalid else {
-                    print(">>> websocket: connection closed \(webSocketTask.closeCode)")
+                    log(">>> websocket: connection closed \(webSocketTask.closeCode)")
                     return
                 }
                 let result = await awaitNextMessage()
                 msgSubj.send(result)
                 switch result {
                 case let .success(data):
-                    print(">>> ws msg received: \(data?.utf8 ?? "")")
+                    log(">>> ws msg received: \(data?.utf8 ?? "")")
                 case .failure:
                     sleep(pingDelay)
                     await reconnect()
@@ -174,10 +180,10 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
                 return .failure(.failedToSend_ConnectionLost(msg: msg))
             }
             try await webSocketTask.send(msg)
-            print(">>> ws message sent: \(msg)")
+            log(">>> ws message sent: \(msg)")
             return .success(())
         } catch {
-            print(">>> ws message send failed: \(msg) \(error)")
+            log(">>> ws message send failed: \(msg) \(error)")
             return .failure(.failedToSend(msg: msg, cause: error))
         }
     }

@@ -4,6 +4,7 @@ public enum ApiRequestType: String, CustomStringConvertible {
     case put    = "PUT"
     case delete = "DELETE"
     case head   = "HEAD"
+    case patch = "PATCH"
 
     public var description: String {
         switch self {
@@ -17,6 +18,8 @@ public enum ApiRequestType: String, CustomStringConvertible {
             return "DELETE "
         case .head:
             return "HEAD   "
+        case .patch:
+            return "PATCH  "
         }
     }
 

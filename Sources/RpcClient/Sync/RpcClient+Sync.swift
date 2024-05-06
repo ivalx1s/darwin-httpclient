@@ -72,6 +72,19 @@ extension RpcClient {
         )
     }
 
+    public func patch(
+        path: String,
+        headers: [HeaderKey: HeaderValue] = [:],
+        queryParams: [ParamKey: ParamValue] = [:]
+    ) -> Result<ApiResponse, ApiError> {
+        request(
+            type: .patch,
+            path: path,
+            headers: headers,
+            queryParams: queryParams
+        )
+    }
+
     private func request(
             type: ApiRequestType,
             path: String,
@@ -124,7 +137,7 @@ extension RpcClient {
                                 error: error,
                                 requestType: type,
                                 headers: headers,
-                                params: queryParams
+								params: queryParams
                         )
                 )
                 semaphore.signal()
@@ -156,7 +169,8 @@ extension RpcClient {
                                 data: data,
                                 requestType: type,
                                 headers: headers,
-                                params: queryParams
+                                params: queryParams,
+								responseHeaders: response.allHeaderFields
                         )
                 )
                 semaphore.signal()

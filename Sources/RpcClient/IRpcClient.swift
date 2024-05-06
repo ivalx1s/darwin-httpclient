@@ -2,7 +2,7 @@ import Foundation
 import Combine
 
 public protocol IRpcClient:
-    IRestClientSync,
+    IRpcClientSync,
     IRpcClientWithCallback,
     IRpcClientWithPublisher,
     IRpcClientWithAsyncAwait {

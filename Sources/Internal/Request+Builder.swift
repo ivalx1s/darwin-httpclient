@@ -17,9 +17,9 @@ extension IRequestBuilder {
         }
 
         switch type {
-        case .post, .put, .delete:
+        case .post, .put, .delete, .patch:
             request.httpBody = bodyData
-        default:
+        case .get, .head:
             break
         }
 

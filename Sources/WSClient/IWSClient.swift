@@ -55,7 +55,7 @@ public actor WSClient: IWSClient, IRequestBuilder {
             Task {
                 while let webSocketTask {
                     guard webSocketTask.closeCode == .invalid else {
-                        print(">>>> websocket: connection closed \(webSocketTask.closeCode)")
+                        log(">>>> websocket: connection closed \(webSocketTask.closeCode)")
                         continuation.finish()
                         return
                     }

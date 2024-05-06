@@ -19,6 +19,8 @@ extension RpcClient {
             return delete(path: endpoint.path, headers: headers, queryParams: queryParams, bodyData: bodyData)
         case .head:
             return head(path: endpoint.path, headers: headers, queryParams: queryParams)
+        case .patch:
+            return patch(path: endpoint.path, headers: headers, queryParams: queryParams, bodyData: bodyData)
         }
     }
 
@@ -63,6 +65,18 @@ extension RpcClient {
             queryParams: [ParamKey: ParamValue]
     ) -> AnyPublisher<ApiResponse, ApiError> {
         request(type: .delete, path: path, headers: headers, queryParams: queryParams)
+    }
+
+    public func patch(
+        path: String,
+        headers: [HeaderKey: HeaderValue],
+        queryParams: [ParamKey: ParamValue],
+        bodyData: Data?
+    ) -> AnyPublisher<ApiResponse, ApiError> {
+        request(type: .patch,
+                path: path,
+                headers: headers,
+                queryParams: queryParams)
     }
 
     private func request(
@@ -116,7 +130,8 @@ extension RpcClient {
                                 data: data,
                                 requestType: type,
                                 headers: headers,
-                                params: queryParams
+                                params: queryParams,
+								responseHeaders: response.allHeaderFields
                         )
                     } else if response.statusCode == 204 {
                         let apiResponse =  ApiResponse(data: nil, headers: response.allHeaderFields, code: response.statusCode)

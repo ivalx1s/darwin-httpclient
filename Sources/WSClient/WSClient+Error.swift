@@ -7,6 +7,7 @@ public enum WSClientError: Error {
     case failedToReceiveMsg(cause: Error)
     case failedToReceiveMsg_UnsupportedMsgType(type: URLSessionWebSocketTask.Message)
     case failedToReceiveMsg_ConnectionLost
+    case failedToConnect_noHeaders
     case failedToSend(msg: URLSessionWebSocketTask.Message, cause: Error)
     case failedToSend_ConnectionLost(msg: URLSessionWebSocketTask.Message)
 }

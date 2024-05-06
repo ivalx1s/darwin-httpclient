@@ -53,13 +53,13 @@ extension RpcClient: IRequestBuilder {
                 from: body,
                 completionHandler: { data, response, error in
                     if let response = response as? HTTPURLResponse {
-                        print("response: \(response.statusCode)")
+                        log("response: \(response.statusCode)")
                     }
                     if let data = data {
-                        print(String(data: data, encoding: .utf8) ?? "")
+                        log(String(data: data, encoding: .utf8) ?? "")
                     }
                     if let error = error {
-                        print(error.localizedDescription)
+                        log(error.localizedDescription)
                     }
                 }
         )
@@ -147,7 +147,8 @@ extension RpcClient: IRequestBuilder {
                                 message: "data: nil",
                                 requestType: type,
                                 headers: headers,
-                                params: queryParams
+                                params: queryParams,
+								responseHeaders: response.allHeaderFields
                         )
                 )
                 return

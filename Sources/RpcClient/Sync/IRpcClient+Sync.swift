@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol IRestClientSync {
+public protocol IRpcClientSync {
     func get(
         path: String,
         headers: [HeaderKey: HeaderValue],

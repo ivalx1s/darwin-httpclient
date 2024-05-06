@@ -13,6 +13,7 @@ public struct ApiError: Error {
     public let requestType: ApiRequestType
     public let headers: [HeaderKey: HeaderValue]
     public let params: [ParamKey: ParamValue]
+	public let responseHeaders: ResponseHeaders
 
     public var conciseDescription: String {
         "\(responseCode): \(violation) from \(sender); \(message)"
@@ -35,7 +36,8 @@ public struct ApiError: Error {
             violation: ErrorViolation = .warning,
             error: Error? = nil,
             headers: Headers = [:],
-            params: QueryParams = [:]
+            params: QueryParams = [:],
+			responseHeaders: ResponseHeaders = [:]
     ) {
         self.init(
                 sender: sender,
@@ -47,7 +49,8 @@ public struct ApiError: Error {
                 error: error,
                 requestType: endpoint.type,
                 headers: headers,
-                params: params
+                params: params,
+				responseHeaders: responseHeaders
         )
     }
 
@@ -61,7 +64,8 @@ public struct ApiError: Error {
             error: Error? = nil,
             requestType: ApiRequestType,
             headers: Headers = [:],
-            params: QueryParams = [:]
+            params: QueryParams = [:],
+			responseHeaders: ResponseHeaders = [:]
     ) {
         self.sender = Mirror(reflecting: sender).subjectType
         self.url = url
@@ -69,11 +73,12 @@ public struct ApiError: Error {
         self.message = message
         self.rawData = data
         self.violation = violation
-        self.callStack = Thread.callStackSymbols
+        self.callStack = [] // Thread.callStackSymbols
         self.headers = headers
         self.params = params
         self.error = error
         self.requestType = requestType
+		self.responseHeaders = responseHeaders
     }
 
     public func toString() -> String {
