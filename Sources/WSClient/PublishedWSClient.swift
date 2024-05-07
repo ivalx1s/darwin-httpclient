@@ -128,9 +128,9 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
                 log(">>> ws ping")
             case let .some(err):
                 log(">>> ws ping err: \(err)")
-                Task { [weak self] in
-                    await self?.reconnect()
-                }
+//                Task { [weak self] in
+//                    await self?.reconnect()
+//                }
             }
         }
     }
