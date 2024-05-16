@@ -9,16 +9,28 @@ public protocol IPublishedWSClient {
     func send(_ message: String) async -> Result<Void, WSClientError>
     func send(_ data: Data) async -> Result<Void, WSClientError>
     var msgPublisher: AnyPublisher<Result<Data?, WSClientError>, Never> { get async }
+    var connectionPublisher: Published<PublishedWSClient.UrlSessionDelegate.Status>.Publisher { get async }
+}
+
+extension PublishedWSClient.UrlSessionDelegate {
+    public enum Status {
+        case connected
+        case disconnected
+    }
 }
 
 extension PublishedWSClient {
-    class UrlSessionDelegate: NSObject, URLSessionWebSocketDelegate {
+    public class UrlSessionDelegate: NSObject, URLSessionWebSocketDelegate {
+        @Published public var status: Status = .disconnected
+
         public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
             log(">>> ws didOpenWithProtocol \(`protocol` ?? "")")
+            self.status = .connected
         }
 
         public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
             log(">>> ws didCloseWith \(closeCode) \(reason?.utf8 ?? "")")
+            self.status = .disconnected
         }
     }
 }
@@ -31,8 +43,8 @@ extension PublishedWSClient {
 }
 
 public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
-    private var webSocketTask: URLSessionWebSocketTask?
     @Published private var keepConnected: KeepConnected = .off
+    private var webSocketTask: URLSessionWebSocketTask?
     private var keepAliveSubscription: AnyCancellable?
     private let pingDelay: UInt32
     private let sessionConfig: URLSessionConfiguration
@@ -59,6 +71,10 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
         get async { msgSubj.eraseToAnyPublisher() }
     }
 
+    public var connectionPublisher: Published<UrlSessionDelegate.Status>.Publisher {
+        get async { delegate.$status }
+    }
+
     public func connect(to urlPath : String) async -> Result<Void, WSClientError> {
         await connect(to: urlPath, with: {[:]})
     }
@@ -81,6 +97,7 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
         webSocketTask?.resume()
 
         publishMessages()
+
         return .success(())
     }
 
