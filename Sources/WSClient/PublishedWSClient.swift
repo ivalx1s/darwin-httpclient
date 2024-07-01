@@ -47,14 +47,17 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
     private var webSocketTask: URLSessionWebSocketTask?
     private var keepAliveSubscription: AnyCancellable?
     private let pingDelay: UInt32
+    private let reconnectDelay: UInt32
     private let sessionConfig: URLSessionConfiguration
     private let delegate = UrlSessionDelegate()
 
     public init(
         pingInterval: UInt32 = 10,
+        reconnectInterval: UInt32 = 1,
         sessionConfig: URLSessionConfiguration? = nil
     ) {
         self.pingDelay = pingInterval
+        self.reconnectDelay = reconnectInterval
         self.sessionConfig = sessionConfig ?? ApiSessionConfigBuilder.buildConfig(
             timeoutForResponse: 120,
             timeoutResourceInterval: 604800
@@ -165,7 +168,7 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
                 case let .success(data):
                     log(">>> ws msg received: \(data?.utf8 ?? "")")
                 case .failure:
-                    sleep(pingDelay)
+                    sleep(reconnectDelay)
                     await reconnect()
                 }
             }
