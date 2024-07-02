@@ -83,6 +83,14 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
     }
 
     public func connect(to urlPath : String, with headers: @escaping ()async->Headers) async -> Result<Void, WSClientError> {
+        switch keepConnected {
+            case let .on(url, _):
+                log("socket id: \(ObjectIdentifier(self)) already connected to \(url)")
+                return .success(())
+            case .off: 
+                break
+        }
+        
         guard let url = buildRequestUrl(path: urlPath, queryParams: [:]) else {
             return .failure(WSClientError.failedToBuildRequest(forUrlPath: urlPath))
         }
