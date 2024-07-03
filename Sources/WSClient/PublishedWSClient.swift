@@ -83,10 +83,19 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
     }
 
     public func connect(to urlPath : String, with headers: @escaping ()async->Headers) async -> Result<Void, WSClientError> {
+        await connect(to: urlPath, with: headers, force: false)
+    }
+
+    private func connect(to urlPath : String, with headers: @escaping ()async->Headers, force: Bool) async -> Result<Void, WSClientError> {
         switch keepConnected {
-            case let .on(url, _):
-                log("socket id: \(ObjectIdentifier(self)) already connected to \(url)")
-                return .success(())
+            case let .on(url, _): switch force {
+                case true:
+                    break
+                case false:
+                    log("socket id: \(ObjectIdentifier(self)) already connected to \(url)")
+                    return .success(())
+            }
+
             case .off: 
                 break
         }
@@ -116,7 +125,7 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
          switch keepConnected {
          case let .on(url, headers):
              webSocketTask?.cancel()
-             _ = await connect(to: url, with: headers)
+             _ = await connect(to: url, with: headers, force: true)
          case .off: break
          }
     }
@@ -156,9 +165,6 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
                 log(">>> ws ping")
             case let .some(err):
                 log(">>> ws ping err: \(err)")
-//                Task { [weak self] in
-//                    await self?.reconnect()
-//                }
             }
         }
     }
@@ -175,8 +181,9 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
                 switch result {
                 case let .success(data):
                     log(">>> ws msg received: \(data?.utf8 ?? "")")
-                case .failure:
-                    sleep(reconnectDelay)
+                case let .failure(err):
+                    //sleep(reconnectDelay)
+                    log(">>> ws transport error: \(err)")
                     await reconnect()
                 }
             }
@@ -185,9 +192,9 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
 
     private func awaitNextMessage() async -> Result<Data?, WSClientError> {
         do {
-            guard let webSocketTask else {
-                return .failure(.failedToReceiveMsg_ConnectionLost)
-            }
+            guard let webSocketTask
+            else { return .failure(.failedToReceiveMsg()) }
+
             let msg = try await webSocketTask.receive()
             switch msg {
             case let .string(str):
