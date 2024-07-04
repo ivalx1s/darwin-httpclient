@@ -2,6 +2,8 @@ import Foundation
 import Combine
 
 public protocol IPublishedWSClient {
+    typealias ConnectionStatus = PublishedWSClient.UrlSessionDelegate.Status
+
     func connect(to urlPath : String, with headers: @escaping ()async->Headers) async -> Result<Void, WSClientError>
     func connect(to urlPath : String) async -> Result<Void, WSClientError>
     func reconnect() async
@@ -9,19 +11,27 @@ public protocol IPublishedWSClient {
     func send(_ message: String) async -> Result<Void, WSClientError>
     func send(_ data: Data) async -> Result<Void, WSClientError>
     var msgPublisher: AnyPublisher<Result<Data?, WSClientError>, Never> { get async }
-    var connectionPublisher: Published<PublishedWSClient.UrlSessionDelegate.Status>.Publisher { get async }
+    var connectionPublisher: Published<ConnectionStatus>.Publisher { get async }
 }
 
 extension PublishedWSClient.UrlSessionDelegate {
-    public enum Status {
+    public enum Status: Equatable {
+        case initial
         case connected
-        case disconnected
+        case disconnected(closeCode: URLSessionWebSocketTask.CloseCode)
+
+        public var isConnected: Bool {
+            switch self {
+                case .connected: return true
+                case .initial, .disconnected: return false
+            }
+        }
     }
 }
 
 extension PublishedWSClient {
     public class UrlSessionDelegate: NSObject, URLSessionWebSocketDelegate {
-        @Published public var status: Status = .disconnected
+        @Published public var status: Status = .initial
 
         public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
             log(">>> ws didOpenWithProtocol \(`protocol` ?? "")")
@@ -30,7 +40,7 @@ extension PublishedWSClient {
 
         public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
             log(">>> ws didCloseWith \(closeCode) \(reason?.utf8 ?? "")")
-            self.status = .disconnected
+            self.status = .disconnected(closeCode: closeCode)
         }
     }
 }
@@ -74,7 +84,7 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
         get async { msgSubj.eraseToAnyPublisher() }
     }
 
-    public var connectionPublisher: Published<UrlSessionDelegate.Status>.Publisher {
+    public var connectionPublisher: Published<ConnectionStatus>.Publisher {
         get async { delegate.$status }
     }
 
@@ -82,37 +92,38 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
         await connect(to: urlPath, with: {[:]})
     }
 
-    public func connect(to urlPath : String, with headers: @escaping ()async->Headers) async -> Result<Void, WSClientError> {
+    public func connect(
+        to urlPath : String,
+        with headers: @escaping ()async->Headers
+    ) async -> Result<Void, WSClientError> {
         await connect(to: urlPath, with: headers, force: false)
     }
 
-    private func connect(to urlPath : String, with headers: @escaping ()async->Headers, force: Bool) async -> Result<Void, WSClientError> {
+    private func connect(
+        to urlPath : String,
+        with headers: @escaping ()async->Headers,
+        force: Bool
+    ) async -> Result<Void, WSClientError> {
         switch keepConnected {
             case let .on(url, _): switch force {
-                case true:
-                    break
+                case true: break
                 case false:
                     log("socket id: \(ObjectIdentifier(self)) already connected to \(url)")
                     return .success(())
             }
 
-            case .off: 
-                break
+            case .off: break
         }
         
         guard let url = buildRequestUrl(path: urlPath, queryParams: [:]) else {
             return .failure(WSClientError.failedToBuildRequest(forUrlPath: urlPath))
         }
 
-        let authHeaders = await headers()
-        guard !authHeaders.isEmpty else {
-            return .failure(.failedToConnect_noHeaders)
-        }
-
-        let request = buildWSRequest(url: url, headers: authHeaders)
+        let request = buildWSRequest(url: url, headers: await headers())
         let urlSession = URLSession(configuration: sessionConfig, delegate: delegate, delegateQueue: nil)
 
         self.keepConnected = .on(url: urlPath, headers: headers)
+
         webSocketTask = urlSession.webSocketTask(with: request)
         webSocketTask?.resume()
 
@@ -123,16 +134,16 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
 
     public func reconnect() async {
          switch keepConnected {
-         case let .on(url, headers):
-             webSocketTask?.cancel()
-             _ = await connect(to: url, with: headers, force: true)
-         case .off: break
+             case let .on(url, headers):
+                 self.webSocketTask?.cancel(with: .normalClosure, reason: .none)
+                 _ = await connect(to: url, with: headers, force: true)
+             case .off: break
          }
     }
 
     public func disconnect() async {
         keepConnected = .off
-        webSocketTask?.cancel(with: .goingAway, reason: nil)
+        webSocketTask?.cancel(with: .normalClosure, reason: nil)
         webSocketTask = nil
     }
 
@@ -182,8 +193,8 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
                 case let .success(data):
                     log(">>> ws msg received: \(data?.utf8 ?? "")")
                 case let .failure(err):
-                    //sleep(reconnectDelay)
                     log(">>> ws transport error: \(err)")
+                    sleep(reconnectDelay)
                     await reconnect()
                 }
             }
@@ -193,7 +204,7 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
     private func awaitNextMessage() async -> Result<Data?, WSClientError> {
         do {
             guard let webSocketTask
-            else { return .failure(.failedToReceiveMsg()) }
+            else { return .failure(.transportError(connectionStatus: delegate.status)) }
 
             let msg = try await webSocketTask.receive()
             switch msg {
@@ -205,14 +216,14 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
                 return .success(nil)
             }
         } catch {
-            return .failure(.failedToReceiveMsg(cause: error))
+            return .failure(.transportError(cause: error, connectionStatus: delegate.status))
         }
     }
 
     private func send(msg: URLSessionWebSocketTask.Message) async -> Result<Void, WSClientError> {
         do {
             guard let webSocketTask else {
-                return .failure(.failedToSend_ConnectionLost(msg: msg))
+                return .failure(.failedToSend_NotConnected(msg: msg))
             }
             try await webSocketTask.send(msg)
             log(">>> ws message sent: \(msg)")

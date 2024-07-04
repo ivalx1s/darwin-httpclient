@@ -69,7 +69,7 @@ public actor WSClient: IWSClient, IRequestBuilder {
     private func awaitNextMessage() async -> Result<Data, WSClientError> {
         do {
             guard let webSocketTask else {
-                return .failure(.failedToReceiveMsg())
+                return .failure(.disconnected)
             }
             let msg = try await webSocketTask.receive()
             switch msg {
@@ -89,7 +89,7 @@ public actor WSClient: IWSClient, IRequestBuilder {
     private func send(msg: URLSessionWebSocketTask.Message) async -> Result<Void, WSClientError> {
         do {
             guard let webSocketTask else {
-                return .failure(.failedToSend_ConnectionLost(msg: msg))
+                return .failure(.failedToSend_NotConnected(msg: msg))
             }
             try await webSocketTask.send(msg)
             return .success(())
