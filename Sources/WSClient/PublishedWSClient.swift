@@ -104,16 +104,17 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
         with headers: @escaping ()async->Headers,
         force: Bool
     ) async -> Result<Void, WSClientError> {
-        switch keepConnected {
-            case let .on(url, _): switch force {
-                case true: break
-                case false:
-                    log("socket id: \(ObjectIdentifier(self)) already connected to \(url)")
-                    return .success(())
-            }
-
-            case .off: break
-        }
+        await disconnect()
+//        switch keepConnected {
+//            case let .on(url, _): switch force {
+//                case true: break
+//                case false:
+//                    log("socket id: \(ObjectIdentifier(self)) already connected to \(url)")
+//                    return .success(())
+//            }
+//
+//            case .off: break
+//        }
         
         guard let url = buildRequestUrl(path: urlPath, queryParams: [:]) else {
             return .failure(WSClientError.failedToBuildRequest(forUrlPath: urlPath))
