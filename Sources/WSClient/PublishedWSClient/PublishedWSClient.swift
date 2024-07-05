@@ -93,7 +93,11 @@ public final class PublishedWSClient: IPublishedWSClient, IRequestBuilder {
 
     public func reconnect() async { await self.reconnect(with: 0) }
     private func reconnect(with interval: UInt32) async {
-        log(">>> ws \(instanceId) \(currentDateStr)reconnect start \(keepConnected)")
+        log(">>> ws \(instanceId) \(currentDateStr) reconnect start \(keepConnected)")
+        guard self.keepConnected == .on else {
+            log(">>> ws \(instanceId) \(currentDateStr) reconnect not connected \(keepConnected)")
+            return
+        }
         await disconnect()
 
         guard let config else { return }
