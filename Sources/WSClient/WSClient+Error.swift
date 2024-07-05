@@ -1,6 +1,7 @@
 import Foundation
 
 public enum WSClientError: Error {
+    case notConfigured
     case disconnected
     case failedToPing(cause: Error)
     case failedToBuildRequest(forUrlPath: String)

@@ -1,0 +1,207 @@
+import Foundation
+import Combine
+
+public protocol IPublishedWSClient {
+    typealias ConnectionStatus = PublishedWSClient.UrlSessionDelegate.Status
+    typealias Config = PublishedWSClient.Config
+    typealias Err = WSClientError
+
+    func configure(with config: Config) async -> Result<Void, Err>
+    func connect() async -> Result<Void, Err>
+    func reconnect() async
+    func disconnect() async
+    func send(_ message: String) async -> Result<Void, Err>
+    func send(_ data: Data) async -> Result<Void, Err>
+    var msgPublisher: AnyPublisher<Result<Data?, Err>, Never> { get async }
+    var connectionPublisher: Published<ConnectionStatus>.Publisher { get async }
+}
+
+public final class PublishedWSClient: IPublishedWSClient, IRequestBuilder {
+    private var internalKeepConnected: KeepConnected = .off
+    private var keepConnected: KeepConnected { get { internalKeepConnected } }
+    private var webSocketTask: URLSessionWebSocketTask?
+    private var keepAliveSubscription: AnyCancellable?
+    private let delegate = UrlSessionDelegate()
+    private var receiveMessagesTask : Task<Void, any Error>?
+
+    nonisolated
+    private var instanceId: String { ObjectIdentifier(self).debugDescription }
+    private var currentDateStr: String { Date.now.formatted(date: .omitted, time: .standard) }
+    private var config: Config?
+
+    public init() {
+        log(">>>> ws init: \(self.instanceId)")
+    }
+
+    deinit {
+        log(">>>> ws deinit: \(self.instanceId)")
+
+        self.keepAliveSubscription?.cancel()
+        self.webSocketTask?.cancel()
+        self.webSocketTask = .none
+    }
+
+    private var msgSubj = PassthroughSubject<Result<Data?, Err>, Never>()
+    public var msgPublisher: AnyPublisher<Result<Data?, Err>, Never> {
+        get async { msgSubj.eraseToAnyPublisher() }
+    }
+
+    public var connectionPublisher: Published<ConnectionStatus>.Publisher {
+        get async { delegate.$status }
+    }
+
+    @discardableResult
+    public func configure(with config: Config) async -> Result<Void, Err>{
+        self.config = config
+
+        guard self.keepConnected == .off else {
+            print(">>> ws \(instanceId) configure in connection")
+            return .failure(Err.failedToBuildRequest(forUrlPath: config.urlPath))
+        }
+
+        guard let url = buildRequestUrl(path: config.urlPath, queryParams: [:]) else {
+            return .failure(Err.failedToBuildRequest(forUrlPath: config.urlPath))
+        }
+
+        let request = buildWSRequest(url: url, headers: await config.headers())
+        let urlSession = URLSession(configuration: config.sessionConfig, delegate: delegate, delegateQueue: nil)
+
+        let webSocketTask = urlSession.webSocketTask(with: request)
+        log(">>> ws \(instanceId) configure wsSocketTaskId \(ObjectIdentifier(webSocketTask))")
+        self.webSocketTask = webSocketTask
+
+        self.setupKeepAlivePipeline(with: config.pingInterval)
+
+        return .success(())
+    }
+
+    @discardableResult
+    public func connect() async -> Result<Void, Err> {
+        log(">>> ws \(instanceId) \(currentDateStr) connect start \(keepConnected)")
+
+        guard let webSocketTask = webSocketTask
+        else { return .failure(.notConfigured) }
+
+        log(">>> ws \(instanceId) connect wsSocketTaskId \(ObjectIdentifier(webSocketTask))")
+
+        webSocketTask.resume()
+        self.internalKeepConnected = .on
+        self.receiveMessagesTask = Task { await receiveMessages() }
+
+        return .success(())
+    }
+
+    public func reconnect() async { await self.reconnect(with: 0) }
+    private func reconnect(with interval: UInt32) async {
+        log(">>> ws \(instanceId) \(currentDateStr)reconnect start \(keepConnected)")
+        await disconnect()
+
+        guard let config else { return }
+        await self.configure(with: config)
+
+        Task {
+            sleep(interval)
+            await self.connect()
+        }
+    }
+
+    public func disconnect() async {
+        log(">>> ws \(instanceId) disconnect start \(keepConnected)")
+        self.internalKeepConnected = .off
+        self.receiveMessagesTask?.cancel()
+
+        guard let webSocketTask else { return }
+        log(">>> ws \(instanceId) disconnect wsSocketTaskId \(ObjectIdentifier(webSocketTask))")
+        webSocketTask.cancel(with: .normalClosure, reason: nil)
+    }
+
+    public func send(_ message: String) async -> Result<Void, Err> {
+        let msg = URLSessionWebSocketTask.Message.string(message)
+        return await send(msg: msg)
+    }
+
+    public func send(_ data: Data) async -> Result<Void, Err> {
+        let msg = URLSessionWebSocketTask.Message.data(data)
+        return await send(msg: msg)
+    }
+
+    private func setupKeepAlivePipeline(with pingDelay: TimeInterval) {
+        self.keepAliveSubscription = Timer.publish(every: pingDelay, on: .main, in: .common).autoconnect()
+            .sink { [weak self] _ in
+                guard let self,
+                      case .on = self.keepConnected,
+                      self.delegate.status == .connected
+                else { return }
+
+                self.sendPing()
+            }
+    }
+
+    private func sendPing() {
+        webSocketTask?.sendPing { [weak self] err in
+            guard let self,
+                  let config = self.config
+            else { return }
+
+            switch err {
+                case .none:
+                    log(">>> ws \(self.instanceId)  ping")
+                case let .some(err):
+                    log(">>> ws \(self.instanceId) ping err: \(err)")
+            }
+        }
+    }
+
+    private func receiveMessages() async {
+        while self.keepConnected == .on {
+            let result = await self.awaitNextMessage()
+            self.msgSubj.send(result)
+            switch result {
+                case let .success(data):
+                    log(">>> ws \(self.instanceId) msg received: \(data?.utf8 ?? "")")
+                case let .failure(err):
+                    log(">>> ws \(self.instanceId) transport error: \(err)")
+                    Task.detached { [weak self] in
+                        guard let self else { return }
+                        await self.reconnect(with: self.config?.reconnectInterval ?? 0)
+                    }
+                    return
+            }
+        }
+    }
+
+    private func awaitNextMessage() async -> Result<Data?, WSClientError> {
+        do {
+            guard let webSocketTask
+            else { return .failure(.notConfigured) }
+            log(">>> ws awaitNextMessage wsSocketTaskId: \(ObjectIdentifier(webSocketTask))")
+            let msg = try await webSocketTask.receive()
+            switch msg {
+            case let .string(str):
+                return .success(str.data(using: .utf8) ?? Data())
+            case let .data(data):
+                return .success(data)
+            @unknown default:
+                return .success(nil)
+            }
+        } catch {
+            return .failure(.transportError(cause: error, connectionStatus: delegate.status))
+        }
+    }
+
+    private func send(msg: URLSessionWebSocketTask.Message) async -> Result<Void, WSClientError> {
+        do {
+            guard let webSocketTask else {
+                return .failure(.failedToSend_NotConnected(msg: msg))
+            }
+
+            log(">>> ws \(instanceId) message sent to wsSocketTaskId \(ObjectIdentifier(webSocketTask)): \(msg)")
+
+            try await webSocketTask.send(msg)
+            return .success(())
+        } catch {
+            log(">>> ws \(instanceId) message send failed: \(msg) \(error)")
+            return .failure(.failedToSend(msg: msg, cause: error))
+        }
+    }
+}
