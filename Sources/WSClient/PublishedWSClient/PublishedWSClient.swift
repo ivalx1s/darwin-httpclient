@@ -17,8 +17,9 @@ public protocol IPublishedWSClient {
 }
 
 public final class PublishedWSClient: IPublishedWSClient, IRequestBuilder {
-    private var internalKeepConnected: KeepConnected = .off
-    private var keepConnected: KeepConnected { get { internalKeepConnected } }
+    private var internalKeepConnected: Toggle = .off 
+
+    private var keepConnected: Toggle { get { internalKeepConnected } }
     private var webSocketTask: URLSessionWebSocketTask?
     private var keepAliveSubscription: AnyCancellable?
     private let delegate = UrlSessionDelegate()
@@ -93,18 +94,22 @@ public final class PublishedWSClient: IPublishedWSClient, IRequestBuilder {
 
     public func reconnect() async { await self.reconnect(with: 0) }
     private func reconnect(with interval: UInt32) async {
-        log(">>> ws \(instanceId) \(currentDateStr) reconnect start \(keepConnected)")
-        guard self.keepConnected == .on else {
-            log(">>> ws \(instanceId) \(currentDateStr) reconnect not connected \(keepConnected)")
-            return
-        }
-        await disconnect()
-
-        guard let config else { return }
-        await self.configure(with: config)
-
-        Task {
+        Task { [weak self] in
             sleep(interval)
+            
+            guard let self else { return }
+            log(">>> ws \(instanceId) \(currentDateStr) reconnect start \(keepConnected)")
+            
+            guard self.keepConnected == .on else {
+                log(">>> ws \(instanceId) \(currentDateStr) reconnect not connected \(keepConnected)")
+                return
+            }
+
+            await self.disconnect()
+
+            guard let config = self.config else { return }
+            guard case .success = await self.configure(with: config) else { return }
+            
             await self.connect()
         }
     }
@@ -143,9 +148,7 @@ public final class PublishedWSClient: IPublishedWSClient, IRequestBuilder {
 
     private func sendPing() {
         webSocketTask?.sendPing { [weak self] err in
-            guard let self,
-                  let config = self.config
-            else { return }
+            guard let self else { return }
 
             switch err {
                 case .none:

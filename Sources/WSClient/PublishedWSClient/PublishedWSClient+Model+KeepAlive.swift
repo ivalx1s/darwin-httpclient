@@ -1,7 +1,7 @@
 import Foundation
 
 extension PublishedWSClient {
-    enum KeepConnected {
+    enum Toggle {
         case on
         case off
     }
