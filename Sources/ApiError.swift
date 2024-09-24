@@ -1,7 +1,7 @@
 import Foundation
 
 
-public struct ApiError: Error {
+public struct ApiError: Sendable, Error {
     public let violation: ErrorViolation
     public let sender: Any.Type
     public let message: String
@@ -100,7 +100,7 @@ public struct ApiError: Error {
 }
 
 public extension ApiError {
-	enum ErrorViolation: String {
+    enum ErrorViolation: String, Sendable {
 		
 		/// some problems with authentication
 		case authProblem = "AuthProblem"

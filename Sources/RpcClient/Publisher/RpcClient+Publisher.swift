@@ -131,15 +131,15 @@ extension RpcClient {
                                 requestType: type,
                                 headers: headers,
                                 params: queryParams,
-								responseHeaders: response.allHeaderFields
+                                responseHeaders: response.allHeaderFields.asResponseHeaders
                         )
                     } else if response.statusCode == 204 {
-                        let apiResponse =  ApiResponse(data: nil, headers: response.allHeaderFields, code: response.statusCode)
+                        let apiResponse =  ApiResponse(data: nil, headers: response.allHeaderFields.asResponseHeaders, code: response.statusCode)
                         log("🟢 successful   \(type) \(path) \nresponse data: nil \nheaders: \(apiResponse.headers)\n", category: .api)
                         return apiResponse
                     }
 
-                    let apiResponse = ApiResponse(data: data, headers: response.allHeaderFields, code: response.statusCode)
+                    let apiResponse = ApiResponse(data: data, headers: response.allHeaderFields.asResponseHeaders, code: response.statusCode)
                     log("🟢 successful   \(type) \(path) \nresponse data: \(data.utf8 ?? "") \nheaders: \(apiResponse.headers)\n", category: .api)
 
                     return apiResponse

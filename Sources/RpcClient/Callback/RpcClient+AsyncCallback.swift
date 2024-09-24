@@ -148,13 +148,13 @@ extension RpcClient: IRequestBuilder {
                                 requestType: type,
                                 headers: headers,
                                 params: queryParams,
-								responseHeaders: response.allHeaderFields
+                                responseHeaders: response.allHeaderFields.asResponseHeaders
                         )
                 )
                 return
             }
 
-            onSuccess(ApiResponse(data: data, headers: response.allHeaderFields, code: response.statusCode))
+            onSuccess(ApiResponse(data: data, headers: response.allHeaderFields.asResponseHeaders, code: response.statusCode))
         }
 
         task.resume()

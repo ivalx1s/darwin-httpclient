@@ -1,7 +1,7 @@
 import Foundation
 
 extension PublishedWSClient.UrlSessionDelegate {
-    public enum Status: Equatable, CustomDebugStringConvertible {
+    public enum Status: Sendable, Equatable, CustomDebugStringConvertible {
         case initial
         case connected
         case disconnected(closeCode: URLSessionWebSocketTask.CloseCode)

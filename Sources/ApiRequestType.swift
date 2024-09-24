@@ -1,4 +1,4 @@
-public enum ApiRequestType: String, CustomStringConvertible {
+public enum ApiRequestType: String, CustomStringConvertible, Sendable {
     case get    = "GET"
     case post   = "POST"
     case put    = "PUT"

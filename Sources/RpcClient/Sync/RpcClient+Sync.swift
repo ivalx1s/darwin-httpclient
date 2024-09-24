@@ -170,18 +170,18 @@ extension RpcClient {
                                 requestType: type,
                                 headers: headers,
                                 params: queryParams,
-								responseHeaders: response.allHeaderFields
+                                responseHeaders: response.allHeaderFields.asResponseHeaders
                         )
                 )
                 semaphore.signal()
                 return
             } else if response.statusCode == 204 {
-                result = .success(ApiResponse(data: nil, headers: response.allHeaderFields, code: response.statusCode))
+                result = .success(ApiResponse(data: nil, headers: response.allHeaderFields.asResponseHeaders, code: response.statusCode))
                 semaphore.signal()
                 return
             }
 
-            result = .success(ApiResponse(data: data, headers: response.allHeaderFields, code: response.statusCode))
+            result = .success(ApiResponse(data: data, headers: response.allHeaderFields.asResponseHeaders, code: response.statusCode))
             semaphore.signal()
         }
 
