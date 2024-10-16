@@ -95,8 +95,7 @@ public final class PublishedWSClient: IPublishedWSClient, IRequestBuilder {
     public func reconnect() async { await self.reconnect(with: 0) }
     private func reconnect(with interval: UInt32) async {
         Task { [weak self] in
-            sleep(interval)
-            
+
             guard let self else { return }
             log(">>> ws \(instanceId) \(currentDateStr) reconnect start \(keepConnected)")
             
@@ -106,6 +105,8 @@ public final class PublishedWSClient: IPublishedWSClient, IRequestBuilder {
             }
 
             await self.disconnect()
+
+            sleep(interval)
 
             guard let config = self.config else { return }
             guard case .success = await self.configure(with: config) else { return }
