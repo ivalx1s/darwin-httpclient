@@ -60,11 +60,11 @@ public final class PublishedWSClient: IPublishedWSClient, IRequestBuilder {
             return .failure(Err.failedToBuildRequest(forUrlPath: config.urlPath))
         }
 
-        guard let url = buildRequestUrl(path: config.urlPath, queryParams: [:]) else {
+        guard let url = Self.buildRequestUrl(path: config.urlPath, queryParams: [:]) else {
             return .failure(Err.failedToBuildRequest(forUrlPath: config.urlPath))
         }
 
-        let request = buildWSRequest(url: url, headers: await config.headers())
+        let request = Self.buildWSRequest(url: url, headers: await config.headers())
         let urlSession = URLSession(configuration: config.sessionConfig, delegate: delegate, delegateQueue: nil)
 
         let webSocketTask = urlSession.webSocketTask(with: request)

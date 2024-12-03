@@ -1,13 +1,15 @@
 import Foundation
 
-protocol IRequestBuilder {
-    func buildRpcRequest(url: URL, type: ApiRequestType, headers: [HeaderKey: HeaderValue], bodyData: Data?) -> URLRequest
-    func buildWSRequest(url: URL, headers: [HeaderKey: HeaderValue]) -> URLRequest
-    func buildRequestUrl(path: String, queryParams: [ParamKey: ParamValue]) -> URL?
+public protocol IRequestBuilder {
+    static func buildRpcRequest(url: URL, type: ApiRequestType, headers: [HeaderKey: HeaderValue], bodyData: Data?) -> URLRequest
+    static func buildWSRequest(url: URL, headers: [HeaderKey: HeaderValue]) -> URLRequest
+    static func buildRequestUrl(path: String, queryParams: [ParamKey: ParamValue]) -> URL?
 }
 
-extension IRequestBuilder {
-    func buildRpcRequest(url: URL, type: ApiRequestType, headers: [HeaderKey: HeaderValue], bodyData: Data?) -> URLRequest {
+public struct RequestBuilder: IRequestBuilder {}
+
+public extension IRequestBuilder {
+    static func buildRpcRequest(url: URL, type: ApiRequestType, headers: [HeaderKey: HeaderValue], bodyData: Data?) -> URLRequest {
         var request = URLRequest(url: url)
 
         request.httpMethod = type.rawValue
@@ -26,7 +28,7 @@ extension IRequestBuilder {
         return request
     }
 
-    func buildWSRequest(url: URL, headers: [HeaderKey: HeaderValue]) -> URLRequest {
+    static func buildWSRequest(url: URL, headers: [HeaderKey: HeaderValue]) -> URLRequest {
         var request = URLRequest(url: url)
 
         headers.forEach {
@@ -36,7 +38,7 @@ extension IRequestBuilder {
         return request
     }
 
-    func buildRequestUrl(path: String, queryParams: [ParamKey: ParamValue]) -> URL? {
+    static func buildRequestUrl(path: String, queryParams: [ParamKey: ParamValue]) -> URL? {
         guard let encodedPath = path.addingPercentEncoding(withAllowedCharacters: .rfc3986Unreserved) else {
             return nil
         }

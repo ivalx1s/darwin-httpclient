@@ -86,7 +86,7 @@ extension RpcClient {
             queryParams: [String: String],
             bodyData: Data? = nil
     ) -> AnyPublisher<ApiResponse, ApiError> {
-        guard let url = buildRequestUrl(path: path, queryParams: queryParams) else {
+        guard let url = Self.buildRequestUrl(path: path, queryParams: queryParams) else {
             return Fail(
                     error: ApiError(
                             sender: self,
@@ -101,37 +101,37 @@ extension RpcClient {
                     .eraseToAnyPublisher()
         }
 
-        let request = buildRpcRequest(url: url, type: type, headers: headers, bodyData: bodyData)
+        let request = Self.buildRpcRequest(url: url, type: type, headers: headers, bodyData: bodyData)
 
-        let cURL = create_cURL(requestType: type, path: url, headers: headers, bodyData: bodyData)
+        let cURL = Self.create_cURL(requestType: type, path: url, headers: headers, bodyData: bodyData)
         log("\("🟡 beginning   \(type) \(path)")\n\(cURL)", category: .api)
 
         return session.dataTaskPublisher(for: request)
                 .tryMap { data, response in
                     guard let response = response as? HTTPURLResponse else {
                         throw ApiError(
-                                sender: self,
-                                url: url.absoluteString,
-                                responseCode: 0,
-                                message: "no response: \(self.stringifyData(data: data))",
-                                data: data,
-                                requestType: type,
-                                headers: headers,
-                                params: queryParams
+                            sender: self,
+                            url: url.absoluteString,
+                            responseCode: 0,
+                            message: "no response: \(self.stringifyData(data: data))",
+                            data: data,
+                            requestType: type,
+                            headers: headers,
+                            params: queryParams
                         )
                     }
 
                     if response.statusCode < 200 || response.statusCode >= 300 {
                         throw ApiError(
-                                sender: self,
-                                url: url.absoluteString,
-                                responseCode: response.statusCode,
-                                message: "bad response: \(self.stringifyData(data: data))",
-                                data: data,
-                                requestType: type,
-                                headers: headers,
-                                params: queryParams,
-                                responseHeaders: response.allHeaderFields.asResponseHeaders
+                            sender: self,
+                            url: url.absoluteString,
+                            responseCode: response.statusCode,
+                            message: "bad response: \(self.stringifyData(data: data))",
+                            data: data,
+                            requestType: type,
+                            headers: headers,
+                            params: queryParams,
+                            responseHeaders: response.allHeaderFields.asResponseHeaders
                         )
                     } else if response.statusCode == 204 {
                         let apiResponse =  ApiResponse(data: nil, headers: response.allHeaderFields.asResponseHeaders, code: response.statusCode)
@@ -153,13 +153,13 @@ extension RpcClient {
                     } else {
                         log("🔴 fail \(type) \(path) \nerror: \(error.localizedDescription)", category: .api)
                         return ApiError(
-                                sender: self,
-                                url: url.absoluteString,
-                                responseCode: 0,
-                                message: "Unknown error occurred \(error.localizedDescription)",
-                                requestType: type,
-                                headers: headers,
-                                params: queryParams
+                            sender: self,
+                            url: url.absoluteString,
+                            responseCode: 0,
+                            message: "Unknown error occurred \(error.localizedDescription)",
+                            requestType: type,
+                            headers: headers,
+                            params: queryParams
                         )
                     }
                 }

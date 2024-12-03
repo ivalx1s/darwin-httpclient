@@ -35,7 +35,7 @@ extension RpcClient: IRequestBuilder {
             body: Data,
             then handler: @escaping (Result<Data, ApiError>) -> Void
     ) {
-        guard let url = buildRequestUrl(path: path, queryParams: [:]) else {
+        guard let url = Self.buildRequestUrl(path: path, queryParams: [:]) else {
             handler(.failure(
                     ApiError(sender: self, url: path, responseCode: 0, requestType: .post, headers: headers, params: [:]))
             )
@@ -75,8 +75,41 @@ extension RpcClient: IRequestBuilder {
             onSuccess: @escaping (ApiResponse) -> Void,
             onFail: @escaping (ApiError) -> Void
     ) {
-        guard let url = buildRequestUrl(path: path, queryParams: queryParams) else {
+        guard let url = Self.buildRequestUrl(path: path, queryParams: queryParams) else {
             onFail(
+                ApiError(
+                        sender: self,
+                        url: path,
+                        responseCode: 0,
+                        message: "response: nil",
+                        requestType: type,
+                        headers: headers,
+                        params: queryParams
+                )
+            )
+            return
+        }
+
+        let request = Self.buildRpcRequest(url: url, type: type, headers: headers, bodyData: bodyData)
+
+        let task = session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                onFail(
+                    ApiError(
+                            sender: self,
+                            url: path,
+                            responseCode: 0,
+                            message: "\(self) error",
+                            error: error,
+                            requestType: type,
+                            headers: headers,
+                            params: queryParams
+                    )
+                )
+            }
+
+            guard let response = response as? HTTPURLResponse else {
+                onFail(
                     ApiError(
                             sender: self,
                             url: path,
@@ -86,70 +119,37 @@ extension RpcClient: IRequestBuilder {
                             headers: headers,
                             params: queryParams
                     )
-            )
-            return
-        }
-
-        let request = buildRpcRequest(url: url, type: type, headers: headers, bodyData: bodyData)
-
-        let task = session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                onFail(
-                        ApiError(
-                                sender: self,
-                                url: path,
-                                responseCode: 0,
-                                message: "\(self) error",
-                                error: error,
-                                requestType: type,
-                                headers: headers,
-                                params: queryParams
-                        )
-                )
-            }
-
-            guard let response = response as? HTTPURLResponse else {
-                onFail(
-                        ApiError(
-                                sender: self,
-                                url: path,
-                                responseCode: 0,
-                                message: "response: nil",
-                                requestType: type,
-                                headers: headers,
-                                params: queryParams
-                        )
                 )
                 return
             }
 
             guard response.statusCode == 200 else {
                 onFail(
-                        ApiError(
-                                sender: self,
-                                url: path,
-                                responseCode: response.statusCode,
-                                message: "incorrect request",
-                                requestType: type,
-                                headers: headers,
-                                params: queryParams
-                        )
+                    ApiError(
+                            sender: self,
+                            url: path,
+                            responseCode: response.statusCode,
+                            message: "incorrect request",
+                            requestType: type,
+                            headers: headers,
+                            params: queryParams
+                    )
                 )
                 return
             }
 
             guard let data = data else {
                 onFail(
-                        ApiError(
-                                sender: self,
-                                url: path,
-                                responseCode: response.statusCode,
-                                message: "data: nil",
-                                requestType: type,
-                                headers: headers,
-                                params: queryParams,
-                                responseHeaders: response.allHeaderFields.asResponseHeaders
-                        )
+                    ApiError(
+                            sender: self,
+                            url: path,
+                            responseCode: response.statusCode,
+                            message: "data: nil",
+                            requestType: type,
+                            headers: headers,
+                            params: queryParams,
+                            responseHeaders: response.allHeaderFields.asResponseHeaders
+                    )
                 )
                 return
             }

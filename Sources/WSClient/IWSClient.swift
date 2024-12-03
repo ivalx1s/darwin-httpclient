@@ -25,10 +25,10 @@ public actor WSClient: IWSClient, IRequestBuilder {
     }
 
     public func connect(to urlPath : String, with headers: Headers) async -> Result<AsyncStream<Result<Data, WSClientError>>, WSClientError> {
-        guard let url = buildRequestUrl(path: urlPath, queryParams: [:]) else {
+        guard let url = Self.buildRequestUrl(path: urlPath, queryParams: [:]) else {
             return .failure(WSClientError.failedToBuildRequest(forUrlPath: urlPath))
         }
-        let request = buildWSRequest(url: url, headers: headers)
+        let request = Self.buildWSRequest(url: url, headers: headers)
         webSocketTask = urlSession.webSocketTask(with: request)
         webSocketTask?.resume()
 

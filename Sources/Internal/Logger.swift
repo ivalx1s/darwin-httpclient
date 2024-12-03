@@ -16,6 +16,7 @@ internal enum _OSLogPrivacy: Equatable {
     case  auto, `public`, `private`, sensitive
 }
 
+@_transparent
 internal func log(
     _ message: String,
     logType: OSLogType = .default,

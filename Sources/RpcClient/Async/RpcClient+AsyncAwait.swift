@@ -128,8 +128,8 @@ extension RpcClient {
         functionName: String = #function,
         lineNumber: Int = #line
     ) async -> Result<ApiResponse, ApiError> {
-        let request = buildRpcRequest(url: url, type: .get, headers: headers, bodyData: nil)
-        let cURL = create_cURL(requestType: .get, path: url, headers: headers, bodyData: nil)
+        let request = Self.buildRpcRequest(url: url, type: .get, headers: headers, bodyData: nil)
+        let cURL = Self.create_cURL(requestType: .get, path: url, headers: headers, bodyData: nil)
         log("\("🟡 beginning \(ApiRequestType.get) \(url.description)")\n\(cURL)", category: .api)
 
         do {
@@ -137,28 +137,28 @@ extension RpcClient {
 
             guard let response = response as? HTTPURLResponse else {
                 throw ApiError(
-                        sender: self,
-                        url: url.absoluteString,
-                        responseCode: 0,
-                        message: "no response: \(self.stringifyData(data: data))",
-                        data: data,
-                        requestType: .get,
-                        headers: headers,
-                        params: [:]
+                    sender: self,
+                    url: url.absoluteString,
+                    responseCode: 0,
+                    message: "no response: \(self.stringifyData(data: data))",
+                    data: data,
+                    requestType: .get,
+                    headers: headers,
+                    params: [:]
                 )
             }
 
             if response.statusCode < 200 || response.statusCode >= 300 {
                 throw ApiError(
-                        sender: self,
-                        url: url.absoluteString,
-                        responseCode: response.statusCode,
-                        message: "bad response: \(self.stringifyData(data: data))",
-                        data: data,
-                        requestType: .get,
-                        headers: headers,
-						params: [:],
-                        responseHeaders: response.allHeaderFields.asResponseHeaders
+                    sender: self,
+                    url: url.absoluteString,
+                    responseCode: response.statusCode,
+                    message: "bad response: \(self.stringifyData(data: data))",
+                    data: data,
+                    requestType: .get,
+                    headers: headers,
+                    params: [:],
+                    responseHeaders: response.allHeaderFields.asResponseHeaders
                 )
             } else if response.statusCode == 204 {
                 let apiResponse =  ApiResponse(data: nil, headers: response.allHeaderFields.asResponseHeaders, code: response.statusCode)
@@ -175,7 +175,7 @@ extension RpcClient {
         } catch {
             log("🔴 fail \(ApiRequestType.get) \(url.description) \nerror: \(error.localizedDescription)", category: .api)
             return .failure(
-                    ApiError(sender: self, endpoint: .init(path: url.description, type: .get))
+                ApiError(sender: self, endpoint: .init(path: url.description, type: .get))
             )
         }
     }
@@ -191,49 +191,49 @@ extension RpcClient {
             lineNumber: Int = #line
     ) async -> Result<ApiResponse, ApiError> {
         do {
-            guard let url = buildRequestUrl(path: path, queryParams: queryParams) else {
+            guard let url = Self.buildRequestUrl(path: path, queryParams: queryParams) else {
                 throw ApiError(
-                        sender: self,
-                        url: path,
-                        responseCode: 0,
-                        message: "Unable to build url",
-                        requestType: type,
-                        headers: headers,
-                        params: queryParams
+                    sender: self,
+                    url: path,
+                    responseCode: 0,
+                    message: "Unable to build url",
+                    requestType: type,
+                    headers: headers,
+                    params: queryParams
                 )
             }
 
-            let request = buildRpcRequest(url: url, type: type, headers: headers, bodyData: bodyData)
+            let request = Self.buildRpcRequest(url: url, type: type, headers: headers, bodyData: bodyData)
 
-            let cURL = create_cURL(requestType: type, path: url, headers: headers, bodyData: bodyData)
+            let cURL = Self.create_cURL(requestType: type, path: url, headers: headers, bodyData: bodyData)
             log("\("🟡 beginning   \(type) \(path)")\n\(cURL)", category: .api, fileID: fileID, functionName: functionName, lineNumber: lineNumber)
 
             let (data, response) = try await session.data(for: request)
 
             guard let response = response as? HTTPURLResponse else {
                 throw ApiError(
-                        sender: self,
-                        url: url.absoluteString,
-                        responseCode: 0,
-                        message: "no response: \(self.stringifyData(data: data))",
-                        data: data,
-                        requestType: type,
-                        headers: headers,
-                        params: queryParams
+                    sender: self,
+                    url: url.absoluteString,
+                    responseCode: 0,
+                    message: "no response: \(self.stringifyData(data: data))",
+                    data: data,
+                    requestType: type,
+                    headers: headers,
+                    params: queryParams
                 )
             }
 
             if response.statusCode < 200 || response.statusCode >= 300 {
                 throw ApiError(
-                        sender: self,
-                        url: url.absoluteString,
-                        responseCode: response.statusCode,
-                        message: "bad response: \(self.stringifyData(data: data))",
-                        data: data,
-                        requestType: type,
-                        headers: headers,
-                        params: queryParams,
-                        responseHeaders: response.allHeaderFields.asResponseHeaders
+                    sender: self,
+                    url: url.absoluteString,
+                    responseCode: response.statusCode,
+                    message: "bad response: \(self.stringifyData(data: data))",
+                    data: data,
+                    requestType: type,
+                    headers: headers,
+                    params: queryParams,
+                    responseHeaders: response.allHeaderFields.asResponseHeaders
                 )
             } else if response.statusCode == 204 {
                 let apiResponse =  ApiResponse(data: nil, headers: response.allHeaderFields.asResponseHeaders, code: response.statusCode)
