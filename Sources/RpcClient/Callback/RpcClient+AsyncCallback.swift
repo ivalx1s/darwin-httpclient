@@ -1,7 +1,7 @@
 import Foundation
 
 extension RpcClient: IRequestBuilder {
-    public func get(
+    nonisolated public func get(
             path: String,
             headers: [HeaderKey: HeaderValue] = [:],
             queryParams: [ParamKey: ParamValue] = [:],
@@ -18,7 +18,7 @@ extension RpcClient: IRequestBuilder {
         )
     }
 
-    public func post(
+    public nonisolated func post(
             path: String,
             headers: [HeaderKey: HeaderValue] = [:],
             queryParams: [ParamKey: ParamValue] = [:],
@@ -29,7 +29,7 @@ extension RpcClient: IRequestBuilder {
         request(type: .post, path: path,headers: headers, queryParams: queryParams, bodyData: bodyData, onSuccess: onSuccess, onFail: onFail)
     }
 
-    func upload(
+    nonisolated func upload(
             path: String,
             headers: [HeaderKey: HeaderValue] = [:],
             body: Data,
@@ -66,7 +66,7 @@ extension RpcClient: IRequestBuilder {
         task.resume()
     }
 
-    private func request(
+    private nonisolated func request(
             type: ApiRequestType,
             path: String,
             headers: [HeaderKey: HeaderValue] = [:],

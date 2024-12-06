@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-public protocol IRpcClient:
+public protocol IRpcClient: Actor,
     IRpcClientSync,
     IRpcClientWithCallback,
     IRpcClientWithPublisher,

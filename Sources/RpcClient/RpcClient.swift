@@ -2,7 +2,7 @@ import Foundation
 import Combine
 import os.log
 
-public class RpcClient: IRpcClient {
+public actor RpcClient: IRpcClient {
     let session: URLSession
 
     public init(session: URLSession) {
@@ -20,7 +20,7 @@ public class RpcClient: IRpcClient {
 }
 
 extension RpcClient {
-    func stringifyData(data: Data?) -> String {
+    nonisolated func stringifyData(data: Data?) -> String {
         let htmlPrefix = "<!doctype html>"
         guard let data = data else {
             return ""

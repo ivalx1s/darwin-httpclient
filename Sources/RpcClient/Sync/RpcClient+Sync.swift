@@ -1,7 +1,7 @@
 import Foundation
 
 extension RpcClient {
-    public func get(
+    public nonisolated func get(
             path: String,
             headers: [HeaderKey: HeaderValue] = [:],
             queryParams: [ParamKey: ParamValue] = [:]
@@ -14,7 +14,7 @@ extension RpcClient {
         )
     }
 
-    public func post(
+    public nonisolated func post(
             path: String,
             headers: [HeaderKey: HeaderValue] = [:],
             queryParams: [ParamKey: ParamValue] = [:],
@@ -29,7 +29,7 @@ extension RpcClient {
         )
     }
 
-    public func put(
+    public nonisolated func put(
             path: String,
             headers: [HeaderKey: HeaderValue] = [:],
             queryParams: [ParamKey: ParamValue] = [:],
@@ -44,7 +44,7 @@ extension RpcClient {
         )
     }
 
-    public func delete(
+    public nonisolated func delete(
             path: String,
             headers: [HeaderKey: HeaderValue] = [:],
             queryParams: [ParamKey: ParamValue] = [:],
@@ -59,7 +59,7 @@ extension RpcClient {
         )
     }
 
-    public func head(
+    public nonisolated func head(
             path: String,
             headers: [HeaderKey: HeaderValue] = [:],
             queryParams: [ParamKey: ParamValue] = [:]
@@ -72,7 +72,7 @@ extension RpcClient {
         )
     }
 
-    public func patch(
+    public nonisolated func patch(
         path: String,
         headers: [HeaderKey: HeaderValue] = [:],
         queryParams: [ParamKey: ParamValue] = [:]
@@ -85,7 +85,7 @@ extension RpcClient {
         )
     }
 
-    private func request(
+    private nonisolated func request(
             type: ApiRequestType,
             path: String,
             headers: [HeaderKey: HeaderValue] = [:],

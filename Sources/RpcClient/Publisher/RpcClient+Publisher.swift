@@ -2,7 +2,7 @@ import Foundation
 import Combine
 
 extension RpcClient {
-    public func perform(
+    nonisolated public func perform(
             endpoint: ApiEndpoint,
             headers: [HeaderKey: HeaderValue],
             queryParams: [ParamKey: ParamValue],
@@ -24,7 +24,7 @@ extension RpcClient {
         }
     }
 
-    public func get(
+    public nonisolated func get(
             path: String,
             headers: [HeaderKey: HeaderValue],
             queryParams: [ParamKey: ParamValue]
@@ -32,7 +32,7 @@ extension RpcClient {
         request(type: .get, path: path, headers: headers, queryParams: queryParams)
     }
 
-    public func post(
+    public nonisolated func post(
             path: String,
             headers: [HeaderKey: HeaderValue],
             queryParams: [ParamKey: ParamValue],
@@ -41,7 +41,7 @@ extension RpcClient {
         request(type: .post, path: path, headers: headers, queryParams: queryParams, bodyData: bodyData)
     }
 
-    public func put(
+    public nonisolated func put(
             path: String,
             headers: [HeaderKey: HeaderValue],
             queryParams: [ParamKey: ParamValue],
@@ -50,7 +50,7 @@ extension RpcClient {
         request(type: .put, path: path, headers: headers, queryParams: queryParams, bodyData: bodyData)
     }
 
-    public func delete(
+    public nonisolated func delete(
             path: String,
             headers: [HeaderKey: HeaderValue],
             queryParams: [ParamKey: ParamValue],
@@ -59,7 +59,7 @@ extension RpcClient {
         request(type: .delete, path: path, headers: headers, queryParams: queryParams, bodyData: bodyData)
     }
 
-    public func head(
+    public nonisolated func head(
             path: String,
             headers: [HeaderKey: HeaderValue],
             queryParams: [ParamKey: ParamValue]
@@ -67,7 +67,7 @@ extension RpcClient {
         request(type: .delete, path: path, headers: headers, queryParams: queryParams)
     }
 
-    public func patch(
+    public nonisolated func patch(
         path: String,
         headers: [HeaderKey: HeaderValue],
         queryParams: [ParamKey: ParamValue],
@@ -79,7 +79,7 @@ extension RpcClient {
                 queryParams: queryParams)
     }
 
-    private func request(
+    private nonisolated func request(
             type: ApiRequestType,
             path: String,
             headers: [String: String],
