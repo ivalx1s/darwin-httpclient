@@ -7,8 +7,9 @@ let package = Package(
     name: "darwin-httpclient",
 	platforms: [
 		.iOS(.v15),
-		.watchOS(.v7),
-		.macOS(.v11)
+		.watchOS(.v8),
+		.macOS(.v12),
+        .tvOS(.v15),
 	],
     products: [
         .library(

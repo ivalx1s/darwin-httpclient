@@ -1,5 +1,6 @@
 import Foundation
 
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 extension PublishedWSClient.UrlSessionDelegate {
     public enum Status: Sendable, Equatable, CustomDebugStringConvertible {
         case initial
@@ -23,6 +24,7 @@ extension PublishedWSClient.UrlSessionDelegate {
     }
 }
 
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 extension PublishedWSClient {
     public class UrlSessionDelegate: NSObject, URLSessionWebSocketDelegate {
         @Published public var status: Status = .initial

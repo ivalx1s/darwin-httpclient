@@ -1,5 +1,6 @@
 import Foundation
 
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 public protocol IWSClient {
     func connect(to urlPath : String, with headers: Headers) async -> Result<AsyncStream<Result<Data, WSClientError>>, WSClientError>
     func disconnect() async
@@ -7,6 +8,7 @@ public protocol IWSClient {
     func send(_ data: Data) async -> Result<Void, WSClientError>
 }
 
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 public actor WSClient: IWSClient, IRequestBuilder {
     private var webSocketTask: URLSessionWebSocketTask?
     private let urlSession: URLSession

@@ -1,5 +1,6 @@
 import Foundation
 
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 extension PublishedWSClient {
     public struct Config {
         let pingInterval: TimeInterval
@@ -27,6 +28,7 @@ extension PublishedWSClient {
     }
 }
 
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 extension PublishedWSClient.Config: Equatable {
     public static func ==(lhs : PublishedWSClient.Config, rhs : PublishedWSClient.Config) -> Bool {
         lhs.pingInterval == rhs.pingInterval

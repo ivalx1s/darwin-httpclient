@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 public protocol IPublishedWSClient {
     typealias ConnectionStatus = PublishedWSClient.UrlSessionDelegate.Status
     typealias Config = PublishedWSClient.Config
@@ -16,6 +17,7 @@ public protocol IPublishedWSClient {
     var connectionPublisher: Published<ConnectionStatus>.Publisher { get async }
 }
 
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 public final class PublishedWSClient: IPublishedWSClient, IRequestBuilder {
     private var internalKeepConnected: Toggle = .off 
 

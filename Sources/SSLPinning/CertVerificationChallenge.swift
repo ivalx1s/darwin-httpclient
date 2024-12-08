@@ -2,6 +2,7 @@ import Foundation
 
 public protocol ICertVerificationChallenge: URLSessionDelegate {}
 
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 extension CertVerificationChallenge {
     public enum ValidationStrategy {
         case anyCertFromChain
@@ -9,6 +10,7 @@ extension CertVerificationChallenge {
     }
 }
 
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 open class CertVerificationChallenge: NSObject, ICertVerificationChallenge {
     let certUrls: [URL]
     let  validationStrategy: ValidationStrategy
@@ -66,6 +68,7 @@ open class CertVerificationChallenge: NSObject, ICertVerificationChallenge {
     }
 }
 
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 public final class CertPublicKeyVerificationChallenge: CertVerificationChallenge {
     private lazy var pinnedCertsKeys: Set<CFData> = {
         Set(
