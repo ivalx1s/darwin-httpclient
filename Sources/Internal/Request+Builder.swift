@@ -47,10 +47,11 @@ public extension IRequestBuilder {
         }
 
         if !queryParams.isEmpty {
-            urlComponents.percentEncodedQuery = urlComponents.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
             urlComponents.queryItems = queryParams
                     .sorted { $0.key < $1.key }
                     .map { URLQueryItem(name: $0.key, value: $0.value) }
+
+            urlComponents.percentEncodedQuery = urlComponents.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
         }
 
         return urlComponents.url
