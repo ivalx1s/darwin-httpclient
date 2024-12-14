@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol IRpcClientWithAsyncAwait {
+public protocol IRpcClientWithAsyncAwait: Actor {
     func get(
         url: URL,
         fileID: String,
