@@ -1,6 +1,6 @@
 import Foundation
 
-public struct ApiEndpoint {
+public struct ApiEndpoint: Sendable, Hashable {
     public let path: String
     public let type: ApiRequestType
     
