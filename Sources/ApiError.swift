@@ -3,7 +3,7 @@ import Foundation
 
 public struct ApiError: Sendable, Error {
     public let violation: ErrorViolation
-    public let sender: Any.Type
+    public let sender: Any.Type?
     public let message: String
     public let rawData: Data?
     public let callStack: [String]
@@ -16,7 +16,7 @@ public struct ApiError: Sendable, Error {
 	public let responseHeaders: ResponseHeaders
 
     public var conciseDescription: String {
-        "\(responseCode): \(violation) from \(sender); \(message)"
+        "\(responseCode): \(violation) from \(sender ?? "unknown sender" as Any); \(message)"
     }
 
     public var description: String {
@@ -28,7 +28,7 @@ public struct ApiError: Sendable, Error {
     }
     
     public init(
-            sender: Any,
+            sender: Any? = nil,
             endpoint: ApiEndpoint,
             responseCode: Int = 0,
             message: String = "",
@@ -55,7 +55,7 @@ public struct ApiError: Sendable, Error {
     }
 
     public init(
-            sender: Any,
+            sender: Any? = nil,
             url: String = "",
             responseCode: Int = 0,
             message: String = "",
@@ -67,7 +67,7 @@ public struct ApiError: Sendable, Error {
             params: QueryParams = [:],
 			responseHeaders: ResponseHeaders = [:]
     ) {
-        self.sender = Mirror(reflecting: sender).subjectType
+        self.sender = Mirror(reflecting: sender ?? "unknwon sender" as Any).subjectType
         self.url = url
         self.responseCode = responseCode
         self.message = message
@@ -87,7 +87,7 @@ public struct ApiError: Sendable, Error {
 
     public var data: [String: String] {
         [
-            "sender": "\(sender)",
+            "sender": "\(sender ?? "unknown sender" as Any)",
             "url": url,
             "type": "\(requestType.rawValue)",
             "responseCode": "\(responseCode)",
