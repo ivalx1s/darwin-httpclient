@@ -9,6 +9,9 @@ public typealias QueryParams = [ParamKey: ParamValue]
 public typealias ResponseHeaders = [String: Sendable]
 public typealias ResponseCode = Int
 
+extension ResponseHeaders: Sendable {}
+extension ResponseCode: Sendable {}
+
 public extension ResponseCode {
     var statusOK: Bool { self == 200 }
     var statusCreated: Bool { self == 201 }

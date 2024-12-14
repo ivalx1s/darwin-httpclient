@@ -1,6 +1,6 @@
 import Foundation
 
-public struct ApiResponse {
+public struct ApiResponse: Sendable {
     public let data: Data?
     public let headers: ResponseHeaders
     public let code: ResponseCode
