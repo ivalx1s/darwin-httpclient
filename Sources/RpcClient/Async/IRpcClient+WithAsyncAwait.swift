@@ -43,4 +43,15 @@ public protocol IRpcClientWithAsyncAwait: Actor {
         functionName: String,
         lineNumber: Int
     ) async -> Result<ApiResponse, ApiError>
+
+    func performAsync(
+        endpoint: ApiEndpoint,
+        headers: Headers,
+        queryParams: QueryParams,
+        bodyData: Data?,
+        retrys: (count: UInt, delay: ()->(TimeInterval)),
+        fileID: String,
+        functionName: String,
+        lineNumber: Int
+    ) async -> Result<ApiResponse, ApiError>
 }
