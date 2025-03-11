@@ -191,7 +191,7 @@ extension RpcClient {
 
         switch result {
         case .success(let response):
-            log("🟢 successful   \(type) \(path) \nresponse data: \(response.data?.utf8 ?? "") \nheaders: \(response.headers)\n", category: .api)
+            log("🟢 successful   \(type) \(path) \nresponse data: \(response.data?.utf8 ?? "") \nheaders: \(response.headers.payloads)\n", category: .api)
 
         case .failure(let error):
             log("🔴 failed \(type) \(path) \nerror: \(error.toString())", category: .api)

@@ -11,9 +11,9 @@ extension CertVerificationChallenge {
 }
 
 @available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
-open class CertVerificationChallenge: NSObject, ICertVerificationChallenge {
+open class CertVerificationChallenge: NSObject, ICertVerificationChallenge, @unchecked Sendable {
     let certUrls: [URL]
-    let  validationStrategy: ValidationStrategy
+    let validationStrategy: ValidationStrategy
 
     public init(
         certUrls: [URL],

@@ -190,12 +190,12 @@ extension RpcClient {
                 )
             } else if response.statusCode == 204 {
                 let apiResponse =  ApiResponse(data: nil, headers: response.allHeaderFields.asResponseHeaders, code: response.statusCode)
-                log("🟢 successful   \(ApiRequestType.get) \(url.description) \nresponse data: nil \nheaders: \(apiResponse.headers)\n", category: .api)
+                log("🟢 successful   \(ApiRequestType.get) \(url.description) \nresponse data: nil \nheaders: \(apiResponse.headers.payloads)\n", category: .api)
                 return .success(apiResponse)
             }
 
             let apiResponse = ApiResponse(data: data, headers: response.allHeaderFields.asResponseHeaders, code: response.statusCode)
-            log("🟢 successful   \(ApiRequestType.get) \(url.description) \nresponse data: \(data.utf8 ?? "") \nheaders: \(apiResponse.headers)\n", category: .api)
+            log("🟢 successful   \(ApiRequestType.get) \(url.description) \nresponse data: \(data.utf8 ?? "") \nheaders: \(apiResponse.headers.payloads)\n", category: .api)
             return .success(apiResponse)
         } catch let error as ApiError {
             log("🔴 fail \(ApiRequestType.get) \(url.description) \nerror: \(error.localizedDescription)", category: .api)
@@ -265,12 +265,12 @@ extension RpcClient {
                 )
             } else if response.statusCode == 204 {
                 let apiResponse =  ApiResponse(data: nil, headers: response.allHeaderFields.asResponseHeaders, code: response.statusCode)
-                log("🟢 successful   \(type) \(path) \nresponse data: nil \nheaders: \(apiResponse.headers)\n", category: .api, fileID: fileID, functionName: functionName, lineNumber: lineNumber)
+                log("🟢 successful   \(type) \(path) \nresponse data: nil \nheaders: \(apiResponse.headers.payloads)\n", category: .api, fileID: fileID, functionName: functionName, lineNumber: lineNumber)
                 return .success(apiResponse)
             }
 
             let apiResponse = ApiResponse(data: data, headers: response.allHeaderFields.asResponseHeaders, code: response.statusCode)
-            log("🟢 successful   \(type) \(path) \nresponse data: \(data.utf8 ?? "") \nheaders: \(apiResponse.headers)\n", category: .api, fileID: fileID, functionName: functionName, lineNumber: lineNumber)
+            log("🟢 successful   \(type) \(path) \nresponse data: \(data.utf8 ?? "") \nheaders: \(apiResponse.headers.payloads)\n", category: .api, fileID: fileID, functionName: functionName, lineNumber: lineNumber)
             return .success(apiResponse)
 
         } catch let error as ApiError {

@@ -5,8 +5,8 @@ public protocol IRpcClientWithCallback {
         path: String,
         headers: [HeaderKey: HeaderValue],
         queryParams: [ParamKey: ParamValue],
-        onSuccess: @escaping (ApiResponse) -> Void,
-        onFail: @escaping (ApiError) -> Void
+        onSuccess: @Sendable @escaping (ApiResponse) -> Void,
+        onFail: @Sendable @escaping (ApiError) -> Void
     )
 
     func post(
@@ -14,8 +14,8 @@ public protocol IRpcClientWithCallback {
         headers: [HeaderKey: HeaderValue],
         queryParams: [ParamKey: ParamValue],
         bodyData: Data,
-        onSuccess: @escaping (ApiResponse) -> Void,
-        onFail: @escaping (ApiError) -> Void
+        onSuccess: @Sendable @escaping (ApiResponse) -> Void,
+        onFail: @Sendable @escaping (ApiError) -> Void
     )
 
     func delete(

@@ -18,7 +18,7 @@ public protocol IPublishedWSClient {
 }
 
 @available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
-public final class PublishedWSClient: IPublishedWSClient, IRequestBuilder {
+public final class PublishedWSClient: IPublishedWSClient, IRequestBuilder, @unchecked Sendable {
     private var internalKeepConnected: Toggle = .off 
 
     private var keepConnected: Toggle { get { internalKeepConnected } }

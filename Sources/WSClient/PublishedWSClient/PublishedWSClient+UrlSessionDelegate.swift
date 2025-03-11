@@ -26,7 +26,7 @@ extension PublishedWSClient.UrlSessionDelegate {
 
 @available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 extension PublishedWSClient {
-    public class UrlSessionDelegate: NSObject, URLSessionWebSocketDelegate {
+    public final class UrlSessionDelegate: NSObject, URLSessionWebSocketDelegate, @unchecked Sendable {
         @Published public var status: Status = .initial
 
         public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
