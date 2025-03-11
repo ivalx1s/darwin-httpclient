@@ -5,8 +5,8 @@ extension RpcClient: IRequestBuilder {
             path: String,
             headers: [HeaderKey: HeaderValue] = [:],
             queryParams: [ParamKey: ParamValue] = [:],
-            onSuccess: @escaping (ApiResponse) -> Void,
-            onFail: @escaping (ApiError) -> Void
+            onSuccess: @Sendable @escaping (ApiResponse) -> Void,
+            onFail: @Sendable @escaping (ApiError) -> Void
     ) {
         request(
                 type: .get,
@@ -23,8 +23,8 @@ extension RpcClient: IRequestBuilder {
             headers: [HeaderKey: HeaderValue] = [:],
             queryParams: [ParamKey: ParamValue] = [:],
             bodyData: Data,
-            onSuccess: @escaping (ApiResponse) -> Void,
-            onFail: @escaping (ApiError) -> Void
+            onSuccess: @Sendable @escaping (ApiResponse) -> Void,
+            onFail: @Sendable @escaping (ApiError) -> Void
     ) {
         request(type: .post, path: path,headers: headers, queryParams: queryParams, bodyData: bodyData, onSuccess: onSuccess, onFail: onFail)
     }
@@ -72,8 +72,8 @@ extension RpcClient: IRequestBuilder {
             headers: [HeaderKey: HeaderValue] = [:],
             queryParams: [ParamKey: ParamValue] = [:],
             bodyData: Data? = nil,
-            onSuccess: @escaping (ApiResponse) -> Void,
-            onFail: @escaping (ApiError) -> Void
+            onSuccess: @Sendable @escaping (ApiResponse) -> Void,
+            onFail: @Sendable @escaping (ApiError) -> Void
     ) {
         guard let url = Self.buildRequestUrl(path: path, queryParams: queryParams) else {
             onFail(

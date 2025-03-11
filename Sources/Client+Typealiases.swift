@@ -6,7 +6,7 @@ public typealias Headers = [HeaderKey: HeaderValue]
 public typealias ParamKey = String
 public typealias ParamValue = String
 public typealias QueryParams = [ParamKey: ParamValue]
-public typealias ResponseHeaders = [String: Sendable]
+public typealias ResponseHeaders = [String: UncheckedSendableWrapper<Any>]
 public typealias ResponseCode = Int
 
 extension ResponseHeaders: Sendable {}
@@ -33,10 +33,10 @@ public extension ResponseCode {
 }
 
 extension Dictionary where Key == AnyHashable, Value == Any {
-    var asResponseHeaders: [String: Sendable] {
+    var asResponseHeaders: [String: UncheckedSendableWrapper<Any>] {
         self
             .reduce(into: ResponseHeaders()) { store, next in
-                store[next.key.description] = next.value
+                store[next.key.description] = .init(payload: next.value)
             }
     }
 }
@@ -94,7 +94,7 @@ public extension HeaderValue {
     // Cache Control
     static let noCache = "no-cache"
     static let noStore = "no-store"
-    static let maxAge = { (seconds: Int) in "max-age=\(seconds)" }
+    static let maxAge: @Sendable (Int) -> String = { (seconds: Int) in "max-age=\(seconds)" }
     static let mustRevalidate = "must-revalidate"
     
     // Content Encoding
