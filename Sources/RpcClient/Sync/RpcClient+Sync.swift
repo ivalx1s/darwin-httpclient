@@ -119,6 +119,7 @@ extension RpcClient {
             break
         }
 
+        nonisolated(unsafe)
         var result: Result<ApiResponse, ApiError>!
 
         let semaphore = DispatchSemaphore(value: 0)
