@@ -2,7 +2,7 @@ import Foundation
 import Combine
 
 @available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
-public protocol IPublishedWSClient {
+public protocol IPublishedWSClient: Sendable {
     typealias ConnectionStatus = PublishedWSClient.UrlSessionDelegate.Status
     typealias Config = PublishedWSClient.Config
     typealias Err = WSClientError
