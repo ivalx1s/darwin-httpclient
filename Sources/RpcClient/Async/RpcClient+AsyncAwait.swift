@@ -28,7 +28,7 @@ extension RpcClient {
         headers: Headers,
         queryParams: QueryParams,
         bodyData: Data?,
-        retrys: (count: UInt, delay: () -> (TimeInterval)),
+        retrys: (count: UInt, delay: @Sendable () -> (TimeInterval)),
         fileID: String = #fileID,
         functionName: String = #function,
         lineNumber: Int = #line

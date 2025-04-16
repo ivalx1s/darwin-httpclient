@@ -6,7 +6,7 @@ public actor RpcClientWithAsyncAwaitMock {
     public init() {}
 
     public var getCalls: [(url: URL, headers: Headers)] = []
-    public var performCalls: [(endpoint: ApiEndpoint, headers: Headers, queryParams: QueryParams, bodyData: Data?, retrys: (count: UInt, delay: ()->TimeInterval)?)] = []
+    public var performCalls: [Call] = []
 
     private var getResult: Result<ApiResponse, ApiError> = .failure(defaultError)
     private var performResult: Result<ApiResponse, ApiError> = .failure(defaultError)
@@ -42,17 +42,27 @@ extension RpcClientWithAsyncAwaitMock: IRpcClientWithAsyncAwait {
     }
 
     public func performAsync(endpoint: ApiEndpoint, headers: Headers, queryParams: QueryParams, bodyData: Data?) async -> Result<ApiResponse, ApiError> {
-        performCalls.append((endpoint: endpoint, headers: headers, queryParams: queryParams, bodyData: bodyData, retrys: .none))
+        performCalls.append(.init(endpoint: endpoint, headers: headers, queryParams: queryParams, bodyData: bodyData, retrys: .none))
         return performResult
     }
 
     public func performAsync(endpoint: ApiEndpoint, headers: Headers, queryParams: QueryParams, bodyData: Data?, fileID: String, functionName: String, lineNumber: Int) async -> Result<ApiResponse, ApiError> {
-        performCalls.append((endpoint: endpoint, headers: headers, queryParams: queryParams, bodyData: bodyData, retrys: .none))
+        performCalls.append(.init(endpoint: endpoint, headers: headers, queryParams: queryParams, bodyData: bodyData, retrys: .none))
         return performResult
     }
 
-    public func performAsync(endpoint: ApiEndpoint, headers: Headers, queryParams: QueryParams, bodyData: Data?, retrys: (count: UInt, delay: () -> (TimeInterval)), fileID: String, functionName: String, lineNumber: Int) async -> Result<ApiResponse, ApiError> {
-        performCalls.append((endpoint: endpoint, headers: headers, queryParams: queryParams, bodyData: bodyData, retrys: retrys))
+    public func performAsync(endpoint: ApiEndpoint, headers: Headers, queryParams: QueryParams, bodyData: Data?, retrys: (count: UInt, delay: @Sendable () -> (TimeInterval)), fileID: String, functionName: String, lineNumber: Int) async -> Result<ApiResponse, ApiError> {
+        performCalls.append(.init(endpoint: endpoint, headers: headers, queryParams: queryParams, bodyData: bodyData, retrys: retrys))
         return performResult
+    }
+}
+
+extension RpcClientWithAsyncAwaitMock {
+    public struct Call: Sendable {
+        let endpoint: ApiEndpoint
+        let headers: Headers
+        let queryParams: QueryParams
+        let bodyData: Data?
+        let retrys: (count: UInt, delay: @Sendable ()->TimeInterval)?
     }
 }

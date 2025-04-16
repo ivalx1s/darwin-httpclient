@@ -49,7 +49,7 @@ public protocol IRpcClientWithAsyncAwait: Actor {
         headers: Headers,
         queryParams: QueryParams,
         bodyData: Data?,
-        retrys: (count: UInt, delay: ()->(TimeInterval)),
+        retrys: (count: UInt, delay: @Sendable ()->(TimeInterval)),
         fileID: String,
         functionName: String,
         lineNumber: Int
