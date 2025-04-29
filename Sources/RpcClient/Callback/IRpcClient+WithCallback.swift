@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol IRpcClientWithCallback {
+public protocol IRpcCompletionClient: Sendable {
     func get(
         path: String,
         headers: [HeaderKey: HeaderValue],

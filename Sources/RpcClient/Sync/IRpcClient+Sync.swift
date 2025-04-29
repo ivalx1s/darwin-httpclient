@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol IRpcClientSync {
+public protocol IRpcSyncClient: Sendable {
     func get(
         path: String,
         headers: [HeaderKey: HeaderValue],

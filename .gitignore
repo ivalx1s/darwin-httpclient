@@ -26,3 +26,5 @@ Carthage/Build
 *.xcworkspace
 *.framework
 *.xcframework
+
+DerivedData/

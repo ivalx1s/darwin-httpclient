@@ -20,7 +20,7 @@ public actor RpcClientWithAsyncAwaitMock {
     }
 }
 
-extension RpcClientWithAsyncAwaitMock: IRpcClientWithAsyncAwait {
+extension RpcClientWithAsyncAwaitMock: IRpcAsyncClient {
     public func get(url: URL, fileID: String, functionName: String, lineNumber: Int) async -> Result<ApiResponse, ApiError> {
         getCalls.append((url: url, headers: [:]))
         return getResult

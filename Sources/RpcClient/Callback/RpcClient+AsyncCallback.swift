@@ -1,6 +1,6 @@
 import Foundation
 
-extension RpcClient: IRequestBuilder {
+extension RpcClient: IRpcCompletionClient {
     nonisolated public func get(
             path: String,
             headers: [HeaderKey: HeaderValue] = [:],

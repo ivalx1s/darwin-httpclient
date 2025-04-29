@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 
-public protocol IRpcClientWithPublisher {
+public protocol IRpcPublisherClient: Sendable {
     func get(
         path: String,
         headers: [HeaderKey: HeaderValue],

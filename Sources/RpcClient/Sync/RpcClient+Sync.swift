@@ -1,6 +1,6 @@
 import Foundation
 
-extension RpcClient {
+extension RpcClient: IRpcSyncClient {
     public nonisolated func get(
             path: String,
             headers: [HeaderKey: HeaderValue] = [:],

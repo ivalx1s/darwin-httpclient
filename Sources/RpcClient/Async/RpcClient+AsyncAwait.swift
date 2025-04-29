@@ -1,7 +1,6 @@
 import Foundation
 
-extension RpcClient {
-
+extension RpcClient: IRpcAsyncClient {
     public func performAsync(
         endpoint: ApiEndpoint,
         headers: Headers,

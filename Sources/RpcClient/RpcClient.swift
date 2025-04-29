@@ -2,7 +2,7 @@ import Foundation
 import Combine
 import os.log
 
-public actor RpcClient: IRpcClient {
+public actor RpcClient {
     let session: URLSession
 
     public init(session: URLSession) {
@@ -33,3 +33,5 @@ extension RpcClient {
         return str.replacingOccurrences(of: htmlPrefix, with: "")
     }
 }
+
+extension RpcClient: IRequestBuilder {}

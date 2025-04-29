@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-extension RpcClient {
+extension RpcClient: IRpcPublisherClient {
     nonisolated public func perform(
             endpoint: ApiEndpoint,
             headers: [HeaderKey: HeaderValue],
