@@ -18,8 +18,8 @@ public protocol IPublishedWSClient: Sendable {
 }
 
 @available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
-public final class PublishedWSClient: IPublishedWSClient, IRequestBuilder, @unchecked Sendable {
-    private var internalKeepConnected: Toggle = .off 
+public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
+    private var internalKeepConnected: Toggle = .off
 
     private var keepConnected: Toggle { get { internalKeepConnected } }
     private var webSocketTask: URLSessionWebSocketTask?
@@ -38,10 +38,6 @@ public final class PublishedWSClient: IPublishedWSClient, IRequestBuilder, @unch
 
     deinit {
         log(">>>> ws deinit: \(self.instanceId)")
-
-        self.keepAliveSubscription?.cancel()
-        self.webSocketTask?.cancel()
-        self.webSocketTask = .none
     }
 
     private var msgSubj = PassthroughSubject<Result<Data?, Err>, Never>()
@@ -96,25 +92,21 @@ public final class PublishedWSClient: IPublishedWSClient, IRequestBuilder, @unch
 
     public func reconnect() async { await self.reconnect(with: 0) }
     private func reconnect(with interval: UInt32) async {
-        Task { [weak self] in
+        log(">>> ws \(instanceId) \(currentDateStr) reconnect start \(keepConnected)")
 
-            guard let self else { return }
-            log(">>> ws \(instanceId) \(currentDateStr) reconnect start \(keepConnected)")
-            
-            guard self.keepConnected == .on else {
-                log(">>> ws \(instanceId) \(currentDateStr) reconnect not connected \(keepConnected)")
-                return
-            }
-
-            await self.disconnect()
-
-            sleep(interval)
-
-            guard let config = self.config else { return }
-            guard case .success = await self.configure(with: config) else { return }
-            
-            await self.connect()
+        guard self.keepConnected == .on else {
+            log(">>> ws \(instanceId) \(currentDateStr) reconnect not connected \(keepConnected)")
+            return
         }
+
+        await self.disconnect()
+
+        sleep(interval)
+
+        guard let config = self.config else { return }
+        guard case .success = await self.configure(with: config) else { return }
+
+        await self.connect()
     }
 
     public func disconnect() async {
@@ -141,11 +133,11 @@ public final class PublishedWSClient: IPublishedWSClient, IRequestBuilder, @unch
         self.keepAliveSubscription = Timer.publish(every: pingDelay, on: .main, in: .common).autoconnect()
             .sink { [weak self] _ in
                 guard let self,
-                      case .on = self.keepConnected,
+                      case .on = await self.keepConnected,
                       self.delegate.status == .connected
                 else { return }
 
-                self.sendPing()
+                await self.sendPing()
             }
     }
 
