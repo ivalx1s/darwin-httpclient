@@ -94,8 +94,7 @@ extension RpcAsyncClientStubbable: IRpcAsyncClient {
 
 extension RpcAsyncClientStubbable {
     private func logResponse(endpoint: ApiEndpoint, response: ApiResponse) {
-        log("🟢 STUB   \(endpoint.type) \(endpoint.path) \nresponse data: \(response.data?.utf8 ?? "") \nheaders: \(response.headers.payloads)\n", category: .api)
-
+        log("🔵 response stubbed for: \(endpoint.type) \(endpoint.path) \nresponse code: \(response.code) \nresponse data: \(response.data?.utf8 ?? "") \nheaders: \(response.headers.payloads)\n", category: .api)
     }
 }
 extension RpcAsyncClientStubbable: IRpcAsyncClientStubbable {

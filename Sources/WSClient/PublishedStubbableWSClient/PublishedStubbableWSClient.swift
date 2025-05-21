@@ -47,7 +47,7 @@ extension PublishedStubbableWSClient: IPublishedWSClient {
             case .none:
                 await self.client.send(message)
             case let .some(stub):
-                .success(riseStub(stub.outgoingMsgStub))
+                .success(riseStub(stub.incomingMsgData))
         }
     }
 
@@ -56,7 +56,7 @@ extension PublishedStubbableWSClient: IPublishedWSClient {
             case .none:
                 await self.client.send(data)
             case let .some(stub):
-                .success(riseStub(stub.outgoingMsgStub))
+                .success(riseStub(stub.incomingMsgData))
         }
     }
 
@@ -93,15 +93,18 @@ extension PublishedStubbableWSClient: IPublishedStubbableWSClient {
 
     private func checkStubForOutgoingMessage(_ msg: Data) async -> Stub? {
         rules
-            .first {
-                guard let newMsgKey = try? msg.stableNormalizedJSONString(ignoringKeys: $0.ignoringKeys, deep: $0.ignoringDeep)
+            .first { rule in
+                guard let newMsgKey = try? msg.stableNormalizedJSONString(
+                    ignoringKeys: rule.outgoingMsg.ignoringKeys,
+                    deep: rule.outgoingMsg.ignoringDeep
+                )
                 else { return false }
-                return $0.key == newMsgKey
+                return rule.key == newMsgKey
             }
     }
 
     private func riseStub(_ data: Data) {
-        log(">>> incoming msg stubbed: \(String(data: data, encoding: .utf8) ?? "NaS")")
+        log(">>>🔵 incoming msg stubbed: \(String(data: data, encoding: .utf8) ?? "NaS")")
         internalMsgSub.send(.success(data))
     }
 }
