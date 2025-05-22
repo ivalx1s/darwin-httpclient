@@ -36,6 +36,31 @@ extension RpcAsyncClientStubbable: IRpcAsyncClient {
         }
     }
 
+    public func get(
+        url: URL,
+        headers: Headers,
+        retrys: RequestRetrys,
+        fileID: String,
+        functionName: String,
+        lineNumber: Int
+    ) async -> Result<ApiResponse, ApiError> {
+        let endpoint = ApiEndpoint(path: url.description, type: .get)
+        switch rules[endpoint] {
+            case let .some(stub):
+                self.logResponse(endpoint: endpoint, response: stub)
+                return .success(stub)
+            case .none:
+                return await self.client.get(
+                    url: url,
+                    headers: headers,
+                    retrys: retrys,
+                    fileID: fileID,
+                    functionName: functionName,
+                    lineNumber: lineNumber
+                )
+        }
+    }
+
     public func performAsync(
         endpoint: ApiEndpoint,
         headers: Headers,
