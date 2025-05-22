@@ -27,7 +27,7 @@ extension RpcClient: IRpcAsyncClient {
         headers: Headers,
         queryParams: QueryParams,
         bodyData: Data?,
-        retrys: (count: UInt, delay: @Sendable () -> (TimeInterval)),
+        retrys: RequestRetrys,
         fileID: String = #fileID,
         functionName: String = #function,
         lineNumber: Int = #line
@@ -204,6 +204,30 @@ extension RpcClient: IRpcAsyncClient {
             return .failure(
                 ApiError(sender: self, endpoint: .init(path: url.description, type: .get))
             )
+        }
+    }
+
+    public func get(
+        url: URL,
+        headers: Headers,
+        retrys: RequestRetrys,
+        fileID: String,
+        functionName: String,
+        lineNumber: Int
+    ) async -> Result<ApiResponse, ApiError> {
+        switch await get(url: url, headers: headers, fileID: fileID, functionName: functionName, lineNumber: lineNumber) {
+            case let .success(response): return .success(response)
+            case let .failure(err):
+                guard retrys.count > 0 else { return .failure(err) }
+                try? await Task.sleep(nanoseconds: UInt64(1_000_000_000 * retrys.delay()))
+                return await get(
+                    url: url,
+                    headers: headers,
+                    retrys: (count: max(0, retrys.count - 1), delay: retrys.delay),
+                    fileID: fileID,
+                    functionName: functionName,
+                    lineNumber: lineNumber
+                )
         }
     }
 

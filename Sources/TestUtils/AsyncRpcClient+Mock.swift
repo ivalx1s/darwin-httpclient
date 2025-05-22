@@ -5,7 +5,7 @@ public actor RpcClientWithAsyncAwaitMock {
 
     public init() {}
 
-    public var getCalls: [(url: URL, headers: Headers)] = []
+    public var getCalls: [(url: URL, headers: Headers, retrys: RequestRetrys?)] = []
     public var performCalls: [Call] = []
 
     private var getResult: Result<ApiResponse, ApiError> = .failure(defaultError)
@@ -22,22 +22,27 @@ public actor RpcClientWithAsyncAwaitMock {
 
 extension RpcClientWithAsyncAwaitMock: IRpcAsyncClient {
     public func get(url: URL, fileID: String, functionName: String, lineNumber: Int) async -> Result<ApiResponse, ApiError> {
-        getCalls.append((url: url, headers: [:]))
+        getCalls.append((url: url, headers: [:], retrys: .none))
         return getResult
     }
 
     public func get(url: URL, headers: Headers, fileID: String, functionName: String, lineNumber: Int) async -> Result<ApiResponse, ApiError> {
-        getCalls.append((url: url, headers: headers))
+        getCalls.append((url: url, headers: headers, retrys: .none))
+        return getResult
+    }
+
+    public func get(url: URL, headers: Headers, retrys: RequestRetrys, fileID: String, functionName: String, lineNumber: Int) async -> Result<ApiResponse, ApiError> {
+        getCalls.append((url: url, headers: headers, retrys: retrys))
         return getResult
     }
 
     public func get(url: URL) async -> Result<ApiResponse, ApiError> {
-        getCalls.append((url: url, headers: [:]))
+        getCalls.append((url: url, headers: [:], retrys: .none))
         return getResult
     }
 
     public func get(url: URL, headers: Headers) async -> Result<ApiResponse, ApiError> {
-        getCalls.append((url: url, headers: headers))
+        getCalls.append((url: url, headers: headers, retrys: .none))
         return getResult
     }
 
