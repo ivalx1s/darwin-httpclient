@@ -104,16 +104,16 @@ extension RpcClient: IRpcPublisherClient {
         let request = Self.buildRpcRequest(url: url, type: type, headers: headers, bodyData: bodyData)
 
         let cURL = Self.create_cURL(requestType: type, path: url, headers: headers, bodyData: bodyData)
-        log("\("🟡 beginning   \(type) \(path)")\n\(cURL)", category: .api)
+        logger.log("\("🟡 beginning   \(type) \(path)")\n\(cURL)")
 
         return session.dataTaskPublisher(for: request)
-                .tryMap { data, response in
+                .tryMap { [weak self] data, response in
                     guard let response = response as? HTTPURLResponse else {
                         throw ApiError(
                             sender: self,
                             url: url.absoluteString,
                             responseCode: 0,
-                            message: "no response: \(self.stringifyData(data: data))",
+                            message: "no response: \(self?.stringifyData(data: data) ?? "")",
                             data: data,
                             requestType: type,
                             headers: headers,
@@ -126,7 +126,7 @@ extension RpcClient: IRpcPublisherClient {
                             sender: self,
                             url: url.absoluteString,
                             responseCode: response.statusCode,
-                            message: "bad response: \(self.stringifyData(data: data))",
+                            message: "bad response: \(self?.stringifyData(data: data) ?? "")",
                             data: data,
                             requestType: type,
                             headers: headers,
@@ -135,23 +135,23 @@ extension RpcClient: IRpcPublisherClient {
                         )
                     } else if response.statusCode == 204 {
                         let apiResponse =  ApiResponse(data: nil, headers: response.allHeaderFields.asResponseHeaders, code: response.statusCode)
-                        log("🟢 successful   \(type) \(path) \nresponse data: nil \nheaders: \(apiResponse.headers.payloads)\n", category: .api)
+                        self?.logger.log("🟢 successful   \(type) \(path) \nresponse data: nil \nheaders: \(apiResponse.headers.payloads)\n")
                         return apiResponse
                     }
 
                     let apiResponse = ApiResponse(data: data, headers: response.allHeaderFields.asResponseHeaders, code: response.statusCode)
-                    log("🟢 successful   \(type) \(path) \nresponse data: \(data.utf8 ?? "") \nheaders: \(apiResponse.headers.payloads)\n", category: .api)
+                    self?.logger.log("🟢 successful   \(type) \(path) \nresponse data: \(data.utf8 ?? "") \nheaders: \(apiResponse.headers.payloads)\n")
 
                     return apiResponse
                 }
-                .mapError { error in
+                .mapError { [weak self] error in
                     // handle specific errors
 
                     if let error = error as? ApiError {
-                        log("🔴 fail \(type) \(path) \nerror: \(error.toString())", category: .api)
+                        self?.logger.log("🔴 fail \(type) \(path) \nerror: \(error.toString())")
                         return error
                     } else {
-                        log("🔴 fail \(type) \(path) \nerror: \(error.localizedDescription)", category: .api)
+                        self?.logger.log("🔴 fail \(type) \(path) \nerror: \(error.localizedDescription)")
                         return ApiError(
                             sender: self,
                             url: url.absoluteString,

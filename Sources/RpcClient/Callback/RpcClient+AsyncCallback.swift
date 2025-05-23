@@ -51,15 +51,15 @@ extension RpcClient: IRpcCompletionClient {
         let task = session.uploadTask(
                 with: request,
                 from: body,
-                completionHandler: { data, response, error in
+                completionHandler: { [weak self] data, response, error in
                     if let response = response as? HTTPURLResponse {
-                        log("response: \(response.statusCode)")
+                        self?.logger.log("response: \(response.statusCode)")
                     }
                     if let data = data {
-                        log(String(data: data, encoding: .utf8) ?? "")
+                        self?.logger.log(String(data: data, encoding: .utf8) ?? "")
                     }
                     if let error = error {
-                        log(error.localizedDescription)
+                        self?.logger.log(error.localizedDescription)
                     }
                 }
         )

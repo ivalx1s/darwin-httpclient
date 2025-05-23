@@ -157,7 +157,7 @@ extension RpcClient: IRpcAsyncClient {
     ) async -> Result<ApiResponse, ApiError> {
         let request = Self.buildRpcRequest(url: url, type: .get, headers: headers, bodyData: nil)
         let cURL = Self.create_cURL(requestType: .get, path: url, headers: headers, bodyData: nil)
-        log("\("🟡 beginning \(ApiRequestType.get) \(url.description)")\n\(cURL)", category: .api)
+        logger.log("\("🟡 beginning \(ApiRequestType.get) \(url.description)")\n\(cURL)")
 
         do {
             let (data, response) = try await session.data(for: request)
@@ -189,18 +189,18 @@ extension RpcClient: IRpcAsyncClient {
                 )
             } else if response.statusCode == 204 {
                 let apiResponse =  ApiResponse(data: nil, headers: response.allHeaderFields.asResponseHeaders, code: response.statusCode)
-                log("🟢 successful   \(ApiRequestType.get) \(url.description) \nresponse data: nil \nheaders: \(apiResponse.headers.payloads)\n", category: .api)
+                logger.log("🟢 successful   \(ApiRequestType.get) \(url.description) \nresponse data: nil \nheaders: \(apiResponse.headers.payloads)\n")
                 return .success(apiResponse)
             }
 
             let apiResponse = ApiResponse(data: data, headers: response.allHeaderFields.asResponseHeaders, code: response.statusCode)
-            log("🟢 successful   \(ApiRequestType.get) \(url.description) \nresponse data: \(data.utf8 ?? "") \nheaders: \(apiResponse.headers.payloads)\n", category: .api)
+            logger.log("🟢 successful   \(ApiRequestType.get) \(url.description) \nresponse data: \(data.utf8 ?? "") \nheaders: \(apiResponse.headers.payloads)\n")
             return .success(apiResponse)
         } catch let error as ApiError {
-            log("🔴 fail \(ApiRequestType.get) \(url.description) \nerror: \(error.localizedDescription)", category: .api)
+            logger.log("🔴 fail \(ApiRequestType.get) \(url.description) \nerror: \(error.localizedDescription)")
             return .failure(error)
         } catch {
-            log("🔴 fail \(ApiRequestType.get) \(url.description) \nerror: \(error.localizedDescription)", category: .api)
+            logger.log("🔴 fail \(ApiRequestType.get) \(url.description) \nerror: \(error.localizedDescription)")
             return .failure(
                 ApiError(sender: self, endpoint: .init(path: url.description, type: .get))
             )
@@ -257,7 +257,7 @@ extension RpcClient: IRpcAsyncClient {
             let request = Self.buildRpcRequest(url: url, type: type, headers: headers, bodyData: bodyData)
 
             let cURL = Self.create_cURL(requestType: type, path: url, headers: headers, bodyData: bodyData)
-            log("\("🟡 beginning   \(type) \(path)")\n\(cURL)", category: .api, fileID: fileID, functionName: functionName, lineNumber: lineNumber)
+            logger.log("\("🟡 beginning   \(type) \(path)")\n\(cURL)")
 
             let (data, response) = try await session.data(for: request)
 
@@ -288,19 +288,19 @@ extension RpcClient: IRpcAsyncClient {
                 )
             } else if response.statusCode == 204 {
                 let apiResponse =  ApiResponse(data: nil, headers: response.allHeaderFields.asResponseHeaders, code: response.statusCode)
-                log("🟢 successful   \(type) \(path) \nresponse data: nil \nheaders: \(apiResponse.headers.payloads)\n", category: .api, fileID: fileID, functionName: functionName, lineNumber: lineNumber)
+                logger.log("🟢 successful   \(type) \(path) \nresponse data: nil \nheaders: \(apiResponse.headers.payloads)\n")
                 return .success(apiResponse)
             }
 
             let apiResponse = ApiResponse(data: data, headers: response.allHeaderFields.asResponseHeaders, code: response.statusCode)
-            log("🟢 successful   \(type) \(path) \nresponse data: \(data.utf8 ?? "") \nheaders: \(apiResponse.headers.payloads)\n", category: .api, fileID: fileID, functionName: functionName, lineNumber: lineNumber)
+            logger.log("🟢 successful   \(type) \(path) \nresponse data: \(data.utf8 ?? "") \nheaders: \(apiResponse.headers.payloads)\n")
             return .success(apiResponse)
 
         } catch let error as ApiError {
-            log("🔴 fail \(type) \(path) \nerror: \(error.responseCode): \(error.localizedDescription)\nresponse headers: \(error.responseHeaders)", category: .api, fileID: fileID, functionName: functionName, lineNumber: lineNumber)
+            logger.log("🔴 fail \(type) \(path) \nerror: \(error.responseCode): \(error.localizedDescription)\nresponse headers: \(error.responseHeaders)")
             return .failure(error)
         } catch {
-            log("🔴 fail \(type) \(path) \nerror: \(error.localizedDescription)", category: .api, fileID: fileID, functionName: functionName, lineNumber: lineNumber)
+            logger.log("🔴 fail \(type) \(path) \nerror: \(error.localizedDescription)")
             return .failure(
                 ApiError(sender: self, endpoint: .init(path: path, type: type))
             )

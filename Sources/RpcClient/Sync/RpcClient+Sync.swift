@@ -125,7 +125,7 @@ extension RpcClient: IRpcSyncClient {
         let semaphore = DispatchSemaphore(value: 0)
 
         let cURL = Self.create_cURL(requestType: type, path: url, headers: headers, bodyData: bodyData)
-        log("\("🟡 beginning   \(type) \(path)")\n\(cURL)", category: .api)
+        logger.log("\("🟡 beginning   \(type) \(path)")\n\(cURL)")
 
         let task = session.dataTask(with: request) {[weak self] data, response, error in
             if let _ = error {
@@ -192,10 +192,10 @@ extension RpcClient: IRpcSyncClient {
 
         switch result {
         case .success(let response):
-            log("🟢 successful   \(type) \(path) \nresponse data: \(response.data?.utf8 ?? "") \nheaders: \(response.headers.payloads)\n", category: .api)
+            logger.log("🟢 successful   \(type) \(path) \nresponse data: \(response.data?.utf8 ?? "") \nheaders: \(response.headers.payloads)\n")
 
         case .failure(let error):
-            log("🔴 failed \(type) \(path) \nerror: \(error.toString())", category: .api)
+            logger.log("🔴 failed \(type) \(path) \nerror: \(error.toString())")
         case .none:
             break
         }
