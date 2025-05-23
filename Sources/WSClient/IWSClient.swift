@@ -12,18 +12,22 @@ public protocol IWSClient {
 public actor WSClient: IWSClient, IRequestBuilder {
     private var webSocketTask: URLSessionWebSocketTask?
     private let urlSession: URLSession
-
-    public init(urlSession: URLSession) {
+    private let logger: any HttpClientLogging
+    
+    public init(urlSession: URLSession, logger: any HttpClientLogging) {
         self.urlSession = urlSession
+        self.logger = logger
     }
 
     public init(
         sessionConfig: URLSessionConfiguration = ApiSessionConfigBuilder.buildConfig(
             timeoutForResponse: 20,
             timeoutResourceInterval: 120
-        )
+        ),
+        logger: any HttpClientLogging
     ) {
         self.urlSession = URLSession(configuration: sessionConfig)
+        self.logger = logger
     }
 
     public func connect(to urlPath : String, with headers: Headers) async -> Result<AsyncStream<Result<Data, WSClientError>>, WSClientError> {
@@ -57,7 +61,7 @@ public actor WSClient: IWSClient, IRequestBuilder {
             Task {
                 while let webSocketTask {
                     guard webSocketTask.closeCode == .invalid else {
-                        log(">>>> websocket: connection closed \(webSocketTask.closeCode)")
+                        logger.log(">>>> websocket: connection closed \(webSocketTask.closeCode)")
                         continuation.finish()
                         return
                     }
