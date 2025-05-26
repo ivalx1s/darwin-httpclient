@@ -3,7 +3,7 @@ import Combine
 
 public actor RpcClient {
     let session: URLSession
-    internal nonisolated let logger: any HttpClientLogging
+    let logger: any HttpClientLogging
 
     public init(
         session: URLSession,

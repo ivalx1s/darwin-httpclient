@@ -32,7 +32,7 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
     private var currentDateStr: String { Date.now.formatted(date: .omitted, time: .standard) }
     private var config: Config?
     
-    internal let logger: any HttpClientLogging
+    private let logger: any HttpClientLogging
 
     public init(
         logger: any HttpClientLogging = DefaultLogger.shared,

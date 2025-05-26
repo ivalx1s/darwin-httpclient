@@ -18,7 +18,7 @@ public actor PublishedStubbableWSClient {
     private let client: IPublishedWSClient
     private var rules: [Stub] = []
     
-    internal let logger: any HttpClientLogging
+    private let logger: any HttpClientLogging
 
     public init(
         client: IPublishedWSClient,

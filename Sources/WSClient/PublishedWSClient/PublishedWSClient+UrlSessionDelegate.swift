@@ -28,8 +28,8 @@ extension PublishedWSClient.UrlSessionDelegate {
 extension PublishedWSClient {
     public final class UrlSessionDelegate: NSObject, URLSessionWebSocketDelegate, @unchecked Sendable {
         @Published public var status: Status = .initial
-        internal let logger: any HttpClientLogging
-        
+        private let logger: any HttpClientLogging
+
         init(
             logger: any HttpClientLogging = DefaultLogger.shared
         ) {
