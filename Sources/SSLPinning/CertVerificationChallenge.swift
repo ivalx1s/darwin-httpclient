@@ -19,7 +19,7 @@ open class CertVerificationChallenge: NSObject, ICertVerificationChallenge, @unc
     public init(
         certUrls: [URL],
         validationStrategy: ValidationStrategy = .anyCertFromChain,
-        logger: any HttpClientLogging
+        logger: any HttpClientLogging = DefaultLogger.shared
     ) {
         self.certUrls = certUrls
         self.validationStrategy = validationStrategy

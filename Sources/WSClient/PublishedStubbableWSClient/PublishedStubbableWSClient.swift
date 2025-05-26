@@ -22,7 +22,7 @@ public actor PublishedStubbableWSClient {
 
     public init(
         client: IPublishedWSClient,
-        logger: any HttpClientLogging
+        logger: any HttpClientLogging = DefaultLogger.shared
     ) {
         self.client = client
         self.logger = logger

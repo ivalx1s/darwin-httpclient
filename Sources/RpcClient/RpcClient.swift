@@ -1,12 +1,14 @@
 import Foundation
 import Combine
-import os.log
 
 public actor RpcClient {
     let session: URLSession
     internal nonisolated let logger: any HttpClientLogging
 
-    public init(session: URLSession, logger: any HttpClientLogging) {
+    public init(
+        session: URLSession,
+        logger: any HttpClientLogging = DefaultLogger.shared
+    ) {
         self.session = session
         self.logger = logger
     }
@@ -16,7 +18,7 @@ public actor RpcClient {
                     timeoutForResponse: 20,
                     timeoutResourceInterval: 120
             ),
-            logger: any HttpClientLogging
+            logger: any HttpClientLogging = DefaultLogger.shared
     ) {
         self.session = URLSession(configuration: sessionConfig)
         self.logger = logger

@@ -8,7 +8,7 @@ public actor RpcAsyncClientStubbable {
 
     public init(
         client: IRpcAsyncClient,
-        logger: any HttpClientLogging
+        logger: any HttpClientLogging = DefaultLogger.shared
     ) {
         self.client = client
         self.logger = logger

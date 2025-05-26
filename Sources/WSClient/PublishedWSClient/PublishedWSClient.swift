@@ -34,7 +34,10 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
     
     internal let logger: any HttpClientLogging
 
-    public init(logger: any HttpClientLogging, delegate: UrlSessionDelegate? = nil) {
+    public init(
+        logger: any HttpClientLogging = DefaultLogger.shared,
+        delegate: UrlSessionDelegate? = nil
+    ) {
         self.logger = logger
         if let delegate {
             self.delegate = delegate

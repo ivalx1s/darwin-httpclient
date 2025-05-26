@@ -14,7 +14,10 @@ public actor WSClient: IWSClient, IRequestBuilder {
     private let urlSession: URLSession
     private let logger: any HttpClientLogging
     
-    public init(urlSession: URLSession, logger: any HttpClientLogging) {
+    public init(
+        urlSession: URLSession,
+        logger: any HttpClientLogging = DefaultLogger.shared
+    ) {
         self.urlSession = urlSession
         self.logger = logger
     }
@@ -24,7 +27,7 @@ public actor WSClient: IWSClient, IRequestBuilder {
             timeoutForResponse: 20,
             timeoutResourceInterval: 120
         ),
-        logger: any HttpClientLogging
+        logger: any HttpClientLogging = DefaultLogger.shared
     ) {
         self.urlSession = URLSession(configuration: sessionConfig)
         self.logger = logger

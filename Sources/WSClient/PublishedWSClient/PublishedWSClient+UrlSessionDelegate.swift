@@ -30,7 +30,9 @@ extension PublishedWSClient {
         @Published public var status: Status = .initial
         internal let logger: any HttpClientLogging
         
-        init(logger: any HttpClientLogging) {
+        init(
+            logger: any HttpClientLogging = DefaultLogger.shared
+        ) {
             self.logger = logger
         }
 
