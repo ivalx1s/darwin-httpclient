@@ -2,13 +2,16 @@ import Foundation
 
 // swiftlint:disable function_parameter_count
 public actor RpcAsyncClientStubbable {
+    private let logger: any HttpClientLogging
     private let client: IRpcAsyncClient
     private var rules: [ApiEndpoint: ApiResponse] = [:]
 
     public init(
-        client: IRpcAsyncClient
+        client: IRpcAsyncClient,
+        logger: any HttpClientLogging = DefaultLogger.shared
     ) {
         self.client = client
+        self.logger = logger
     }
 }
 
@@ -119,7 +122,7 @@ extension RpcAsyncClientStubbable: IRpcAsyncClient {
 
 extension RpcAsyncClientStubbable {
     private func logResponse(endpoint: ApiEndpoint, response: ApiResponse) {
-        log("🔵 response stubbed for: \(endpoint.type) \(endpoint.path) \nresponse code: \(response.code) \nresponse data: \(response.data?.utf8 ?? "") \nheaders: \(response.headers.payloads)\n", category: .api)
+        logger.log("🔵 response stubbed for: \(endpoint.type) \(endpoint.path) \nresponse code: \(response.code) \nresponse data: \(response.data?.utf8 ?? "") \nheaders: \(response.headers.payloads)\n")
     }
 }
 extension RpcAsyncClientStubbable: IRpcAsyncClientStubbable {

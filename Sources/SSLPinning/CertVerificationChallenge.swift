@@ -14,13 +14,16 @@ extension CertVerificationChallenge {
 open class CertVerificationChallenge: NSObject, ICertVerificationChallenge, @unchecked Sendable {
     let certUrls: [URL]
     let validationStrategy: ValidationStrategy
+    let logger: any HttpClientLogging
 
     public init(
         certUrls: [URL],
-        validationStrategy: ValidationStrategy = .anyCertFromChain
+        validationStrategy: ValidationStrategy = .anyCertFromChain,
+        logger: any HttpClientLogging = DefaultLogger.shared
     ) {
         self.certUrls = certUrls
         self.validationStrategy = validationStrategy
+        self.logger = logger
     }
 
     lazy var pinnedCerts : Set<SecCertificate> = {
@@ -35,14 +38,14 @@ open class CertVerificationChallenge: NSObject, ICertVerificationChallenge, @unc
         guard let trust = challenge.protectionSpace.serverTrust,
               SecTrustGetCertificateCount(trust) > 0
         else {
-            log("Challenge failed:, unable to create cert trust", category: .challenge)
+            logger.log("Challenge failed:, unable to create cert trust")
             completionHandler(.cancelAuthenticationChallenge, nil)
             return
         }
 
         guard let certificateChain = SecTrustCopyCertificateChain(trust) as? [SecCertificate]
         else {
-            log("Challenge failed:, unable to create cert chain", category: .challenge)
+            logger.log("Challenge failed:, unable to create cert chain")
             completionHandler(.cancelAuthenticationChallenge, nil)
             return
         }
@@ -51,7 +54,7 @@ open class CertVerificationChallenge: NSObject, ICertVerificationChallenge, @unc
         case .anyCertFromChain:
             switch Set(certificateChain).intersection(pinnedCerts).isEmpty {
             case true:
-                log("Challenge failed, no pinned cert intersection found", category: .challenge)
+                logger.log("Challenge failed, no pinned cert intersection found")
                 completionHandler(.cancelAuthenticationChallenge, nil)
             case false:
                 completionHandler(.useCredential, URLCredential(trust: trust))
@@ -59,7 +62,7 @@ open class CertVerificationChallenge: NSObject, ICertVerificationChallenge, @unc
         case .allCertsFromChain:
             switch Set(certificateChain).subtracting(pinnedCerts).isEmpty {
             case false:
-                log("Challenge failed, no pinned cert intersection found", category: .challenge)
+                logger.log("Challenge failed, no pinned cert intersection found")
                 completionHandler(.cancelAuthenticationChallenge, nil)
             case true:
                 completionHandler(.useCredential, URLCredential(trust: trust))
@@ -69,7 +72,7 @@ open class CertVerificationChallenge: NSObject, ICertVerificationChallenge, @unc
 }
 
 @available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
-public final class CertPublicKeyVerificationChallenge: CertVerificationChallenge {
+public final class CertPublicKeyVerificationChallenge: CertVerificationChallenge, @unchecked Sendable {
     private lazy var pinnedCertsKeys: Set<CFData> = {
         Set(
             self.pinnedCerts
@@ -82,14 +85,14 @@ public final class CertPublicKeyVerificationChallenge: CertVerificationChallenge
         guard let trust = challenge.protectionSpace.serverTrust,
               SecTrustGetCertificateCount(trust) > 0
         else {
-            log("Challenge failed:, unable to create cert trust", category: .challenge)
+            logger.log("Challenge failed:, unable to create cert trust")
             completionHandler(.cancelAuthenticationChallenge, nil)
             return
         }
 
         guard let certificateChain = SecTrustCopyCertificateChain(trust) as? [SecCertificate]
         else {
-            log("Challenge failed:, unable to create cert chain", category: .challenge)
+            logger.log("Challenge failed:, unable to create cert chain")
             completionHandler(.cancelAuthenticationChallenge, nil)
             return
         }
@@ -100,7 +103,7 @@ public final class CertPublicKeyVerificationChallenge: CertVerificationChallenge
         case .anyCertFromChain:
             switch Set(serverKeys).intersection(pinnedCertsKeys).isEmpty {
             case true:
-                log("Challenge failed, no pinned cert intersection found", category: .challenge)
+                logger.log("Challenge failed, no pinned cert intersection found")
                 completionHandler(.cancelAuthenticationChallenge, nil)
             case false:
                 completionHandler(.useCredential, URLCredential(trust: trust))
@@ -108,7 +111,7 @@ public final class CertPublicKeyVerificationChallenge: CertVerificationChallenge
         case .allCertsFromChain:
             switch Set(serverKeys).subtracting(pinnedCertsKeys).isEmpty {
             case false:
-                log("Challenge failed, no pinned cert intersection found", category: .challenge)
+                logger.log("Challenge failed, no pinned cert intersection found")
                 completionHandler(.cancelAuthenticationChallenge, nil)
             case true:
                 completionHandler(.useCredential, URLCredential(trust: trust))
@@ -126,7 +129,9 @@ extension SecCertificate {
         case errSecSuccess:
             return trust
         default:
-            log("SecStatus: \(status), err: \(SecCopyErrorMessageString(status, nil) ?? "undefined err" as CFString) ", category: .challenge)
+            debugPrint(
+                "SecStatus: \(status), err: \(SecCopyErrorMessageString(status, nil) ?? "undefined err" as CFString)"
+            )
             return .none
         }
     }

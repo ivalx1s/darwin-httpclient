@@ -17,11 +17,15 @@ public actor PublishedStubbableWSClient {
     }
     private let client: IPublishedWSClient
     private var rules: [Stub] = []
+    
+    private let logger: any HttpClientLogging
 
     public init(
-        client: IPublishedWSClient
+        client: IPublishedWSClient,
+        logger: any HttpClientLogging = DefaultLogger.shared
     ) {
         self.client = client
+        self.logger = logger
     }
 }
 
@@ -104,7 +108,7 @@ extension PublishedStubbableWSClient: IPublishedStubbableWSClient {
     }
 
     private func riseStub(_ data: Data) {
-        log(">>>🔵 incoming msg stubbed: \(String(data: data, encoding: .utf8) ?? "NaS")")
+        logger.log(">>>🔵 incoming msg stubbed: \(String(data: data, encoding: .utf8) ?? "NaS")")
         internalMsgSub.send(.success(data))
     }
 }

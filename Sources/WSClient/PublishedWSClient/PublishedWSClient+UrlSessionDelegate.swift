@@ -28,14 +28,21 @@ extension PublishedWSClient.UrlSessionDelegate {
 extension PublishedWSClient {
     public final class UrlSessionDelegate: NSObject, URLSessionWebSocketDelegate, @unchecked Sendable {
         @Published public var status: Status = .initial
+        private let logger: any HttpClientLogging
+
+        init(
+            logger: any HttpClientLogging = DefaultLogger.shared
+        ) {
+            self.logger = logger
+        }
 
         public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
-            log(">>> ws didOpenWithProtocol \(`protocol` ?? "")")
+            logger.log(">>> ws didOpenWithProtocol \(`protocol` ?? "")")
             self.status = .connected
         }
 
         public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
-            log(">>> ws didCloseWith \(closeCode) \(reason?.utf8 ?? "")")
+            logger.log(">>> ws didCloseWith \(closeCode) \(reason?.utf8 ?? "")")
             self.status = .disconnected(closeCode: closeCode)
         }
     }

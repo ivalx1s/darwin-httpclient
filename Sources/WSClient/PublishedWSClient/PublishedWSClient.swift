@@ -24,20 +24,31 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
     private var keepConnected: Toggle { get { internalKeepConnected } }
     private var webSocketTask: URLSessionWebSocketTask?
     private var keepAliveSubscription: AnyCancellable?
-    private let delegate = UrlSessionDelegate()
+    private let delegate: UrlSessionDelegate
     private var receiveMessagesTask : Task<Void, any Error>?
 
     nonisolated
     private var instanceId: String { ObjectIdentifier(self).debugDescription }
     private var currentDateStr: String { Date.now.formatted(date: .omitted, time: .standard) }
     private var config: Config?
+    
+    private let logger: any HttpClientLogging
 
-    public init() {
-        log(">>>> ws init: \(self.instanceId)")
+    public init(
+        logger: any HttpClientLogging = DefaultLogger.shared,
+        delegate: UrlSessionDelegate? = nil
+    ) {
+        self.logger = logger
+        if let delegate {
+            self.delegate = delegate
+        } else {
+            self.delegate = UrlSessionDelegate(logger: logger)
+        }
+        logger.log(">>>> ws init: \(self.instanceId)")
     }
 
     deinit {
-        log(">>>> ws deinit: \(self.instanceId)")
+        logger.log(">>>> ws deinit: \(self.instanceId)")
     }
 
     private var msgSubj = PassthroughSubject<Result<Data?, Err>, Never>()
@@ -66,7 +77,7 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
         let urlSession = URLSession(configuration: config.sessionConfig, delegate: delegate, delegateQueue: nil)
 
         let webSocketTask = urlSession.webSocketTask(with: request)
-        log(">>> ws \(instanceId) configure wsSocketTaskId \(ObjectIdentifier(webSocketTask))")
+        logger.log(">>> ws \(instanceId) configure wsSocketTaskId \(ObjectIdentifier(webSocketTask))")
         self.webSocketTask = webSocketTask
 
         self.setupKeepAlivePipeline(with: config.pingInterval)
@@ -76,12 +87,12 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
 
     @discardableResult
     public func connect() async -> Result<Void, Err> {
-        log(">>> ws \(instanceId) \(currentDateStr) connect start \(keepConnected)")
+        logger.log(">>> ws \(instanceId) \(currentDateStr) connect start \(keepConnected)")
 
         guard let webSocketTask = webSocketTask
         else { return .failure(.notConfigured) }
 
-        log(">>> ws \(instanceId) connect wsSocketTaskId \(ObjectIdentifier(webSocketTask))")
+        logger.log(">>> ws \(instanceId) connect wsSocketTaskId \(ObjectIdentifier(webSocketTask))")
 
         webSocketTask.resume()
         self.internalKeepConnected = .on
@@ -92,10 +103,10 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
 
     public func reconnect() async { await self.reconnect(with: 0) }
     private func reconnect(with interval: UInt32) async {
-        log(">>> ws \(instanceId) \(currentDateStr) reconnect start \(keepConnected)")
+        logger.log(">>> ws \(instanceId) \(currentDateStr) reconnect start \(keepConnected)")
 
         guard self.keepConnected == .on else {
-            log(">>> ws \(instanceId) \(currentDateStr) reconnect not connected \(keepConnected)")
+            logger.log(">>> ws \(instanceId) \(currentDateStr) reconnect not connected \(keepConnected)")
             return
         }
 
@@ -110,12 +121,12 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
     }
 
     public func disconnect() async {
-        log(">>> ws \(instanceId) disconnect start \(keepConnected)")
+        logger.log(">>> ws \(instanceId) disconnect start \(keepConnected)")
         self.internalKeepConnected = .off
         self.receiveMessagesTask?.cancel()
 
         guard let webSocketTask else { return }
-        log(">>> ws \(instanceId) disconnect wsSocketTaskId \(ObjectIdentifier(webSocketTask))")
+        logger.log(">>> ws \(instanceId) disconnect wsSocketTaskId \(ObjectIdentifier(webSocketTask))")
         webSocketTask.cancel(with: .normalClosure, reason: nil)
     }
 
@@ -147,9 +158,9 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
 
             switch err {
                 case .none:
-                    log(">>> ws \(self.instanceId)  ping")
+                logger.log(">>> ws \(self.instanceId)  ping")
                 case let .some(err):
-                    log(">>> ws \(self.instanceId) ping err: \(err)")
+                logger.log(">>> ws \(self.instanceId) ping err: \(err)")
             }
         }
     }
@@ -160,9 +171,9 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
             self.msgSubj.send(result)
             switch result {
                 case let .success(data):
-                    log(">>> ws \(self.instanceId) msg received: \(data?.utf8 ?? "")")
+                logger.log(">>> ws \(self.instanceId) msg received: \(data?.utf8 ?? "")")
                 case let .failure(err):
-                    log(">>> ws \(self.instanceId) transport error: \(err)")
+                logger.log(">>> ws \(self.instanceId) transport error: \(err)")
                     Task.detached { [weak self] in
                         guard let self else { return }
                         await self.reconnect(with: self.config?.reconnectInterval ?? 0)
@@ -176,7 +187,7 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
         do {
             guard let webSocketTask
             else { return .failure(.notConfigured) }
-            log(">>> ws awaitNextMessage wsSocketTaskId: \(ObjectIdentifier(webSocketTask))")
+            logger.log(">>> ws awaitNextMessage wsSocketTaskId: \(ObjectIdentifier(webSocketTask))")
             let msg = try await webSocketTask.receive()
             switch msg {
             case let .string(str):
@@ -197,12 +208,12 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
                 return .failure(.failedToSend_NotConnected(msg: msg))
             }
 
-            log(">>> ws \(instanceId) message sent to wsSocketTaskId \(ObjectIdentifier(webSocketTask)): \(msg)")
+            logger.log(">>> ws \(instanceId) message sent to wsSocketTaskId \(ObjectIdentifier(webSocketTask)): \(msg)")
 
             try await webSocketTask.send(msg)
             return .success(())
         } catch {
-            log(">>> ws \(instanceId) message send failed: \(msg) \(error)")
+            logger.log(">>> ws \(instanceId) message send failed: \(msg) \(error)")
             return .failure(.failedToSend(msg: msg, cause: error))
         }
     }
