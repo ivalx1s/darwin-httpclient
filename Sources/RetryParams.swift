@@ -1,6 +1,6 @@
 import Foundation
 
-public struct RequestRetrys: Sendable {
+public struct RetryParams: Sendable {
     let count: UInt
     let delay: @Sendable () -> TimeInterval
     let condition: @Sendable (ApiError) -> Bool

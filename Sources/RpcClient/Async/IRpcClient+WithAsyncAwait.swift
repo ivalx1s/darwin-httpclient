@@ -20,6 +20,15 @@ public protocol IRpcAsyncClient: Sendable {
         lineNumber: Int
     ) async -> Result<ApiResponse, ApiError>
 
+    func get(
+        url: URL,
+        headers: Headers,
+        retrys: RetryParams,
+        fileID: String,
+        functionName: String,
+        lineNumber: Int
+    ) async -> Result<ApiResponse, ApiError>
+
     func performAsync(
         endpoint: ApiEndpoint,
         headers: Headers,
@@ -36,6 +45,17 @@ public protocol IRpcAsyncClient: Sendable {
         queryParams: QueryParams,
         bodyData: Data?,
         retrys: RequestRetrys,
+        fileID: String,
+        functionName: String,
+        lineNumber: Int
+    ) async -> Result<ApiResponse, ApiError>
+
+    func performAsync(
+        endpoint: ApiEndpoint,
+        headers: Headers,
+        queryParams: QueryParams,
+        bodyData: Data?,
+        retrys: RetryParams,
         fileID: String,
         functionName: String,
         lineNumber: Int

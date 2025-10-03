@@ -28,6 +28,28 @@ extension RpcClient: IRpcAsyncClient {
         queryParams: QueryParams,
         bodyData: Data?,
         retrys: RequestRetrys,
+        fileID: String,
+        functionName: String,
+        lineNumber: Int
+    ) async -> Result<ApiResponse, ApiError> {
+        await performAsync(
+            endpoint: endpoint,
+            headers: headers,
+            queryParams: queryParams,
+            bodyData: bodyData,
+            retrys: .init(count: retrys.count, delay: retrys.delay),
+            fileID: fileID,
+            functionName: functionName,
+            lineNumber: lineNumber
+        )
+    }
+
+    public func performAsync(
+        endpoint: ApiEndpoint,
+        headers: Headers,
+        queryParams: QueryParams,
+        bodyData: Data?,
+        retrys: RetryParams,
         fileID: String = #fileID,
         functionName: String = #function,
         lineNumber: Int = #line
@@ -221,6 +243,24 @@ extension RpcClient: IRpcAsyncClient {
         functionName: String,
         lineNumber: Int
     ) async -> Result<ApiResponse, ApiError> {
+        await get(
+            url: url,
+            headers: headers,
+            retrys: .init(count: retrys.count, delay: retrys.delay),
+            fileID: fileID,
+            functionName: functionName,
+            lineNumber: lineNumber
+        )
+    }
+
+    public func get(
+        url: URL,
+        headers: Headers,
+        retrys: RetryParams,
+        fileID: String,
+        functionName: String,
+        lineNumber: Int
+    ) async -> Result<ApiResponse, ApiError> {
         switch await get(url: url, headers: headers, fileID: fileID, functionName: functionName, lineNumber: lineNumber) {
             case let .success(response): return .success(response)
             case let .failure(err):
@@ -233,7 +273,8 @@ extension RpcClient: IRpcAsyncClient {
                     headers: headers,
                     retrys: .init(
                         count: max(0, retrys.count - 1),
-                        delay: retrys.delay
+                        delay: retrys.delay,
+                        condition: retrys.condition
                     ),
                     fileID: fileID,
                     functionName: functionName,

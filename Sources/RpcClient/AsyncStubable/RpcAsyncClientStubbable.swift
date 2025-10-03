@@ -47,6 +47,24 @@ extension RpcAsyncClientStubbable: IRpcAsyncClient {
         functionName: String,
         lineNumber: Int
     ) async -> Result<ApiResponse, ApiError> {
+        await get(
+            url: url,
+            headers: headers,
+            retrys: .init(count: retrys.count, delay: retrys.delay),
+            fileID: fileID,
+            functionName: functionName,
+            lineNumber: lineNumber
+        )
+    }
+
+    public func get(
+        url: URL,
+        headers: Headers,
+        retrys: RetryParams,
+        fileID: String,
+        functionName: String,
+        lineNumber: Int
+    ) async -> Result<ApiResponse, ApiError> {
         let endpoint = ApiEndpoint(path: url.description, type: .get)
         switch rules[endpoint] {
             case let .some(stub):
@@ -97,6 +115,28 @@ extension RpcAsyncClientStubbable: IRpcAsyncClient {
         queryParams: HttpClient.QueryParams,
         bodyData: Data?,
         retrys: RequestRetrys,
+        fileID: String,
+        functionName: String,
+        lineNumber: Int
+    ) async -> Result<HttpClient.ApiResponse, HttpClient.ApiError> {
+        await performAsync(
+            endpoint: endpoint,
+            headers: headers,
+            queryParams: queryParams,
+            bodyData: bodyData,
+            retrys: .init(count: retrys.count, delay: retrys.delay),
+            fileID: fileID,
+            functionName: functionName,
+            lineNumber: lineNumber
+        )
+    }
+
+    public func performAsync(
+        endpoint: HttpClient.ApiEndpoint,
+        headers: HttpClient.Headers,
+        queryParams: HttpClient.QueryParams,
+        bodyData: Data?,
+        retrys: RetryParams,
         fileID: String,
         functionName: String,
         lineNumber: Int
