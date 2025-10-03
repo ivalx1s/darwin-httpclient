@@ -83,7 +83,7 @@ extension RpcAsyncClientStubbable: IRpcAsyncClient {
                     headers: headers,
                     queryParams: queryParams,
                     bodyData: bodyData,
-                    retrys: (count: 0, delay: { 1.0 }),
+                    retrys: .init(count: 0, delay: { 1.0 }),
                     fileID: fileID,
                     functionName: functionName,
                     lineNumber: lineNumber
@@ -96,7 +96,7 @@ extension RpcAsyncClientStubbable: IRpcAsyncClient {
         headers: HttpClient.Headers,
         queryParams: HttpClient.QueryParams,
         bodyData: Data?,
-        retrys: (count: UInt, delay: @Sendable () -> TimeInterval),
+        retrys: RequestRetrys,
         fileID: String,
         functionName: String,
         lineNumber: Int

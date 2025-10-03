@@ -35,14 +35,20 @@ extension RpcClient: IRpcAsyncClient {
         switch await request(type: endpoint.type, path: endpoint.path, headers: headers, queryParams: queryParams, bodyData: bodyData, fileID: fileID, functionName: functionName, lineNumber: lineNumber) {
             case let .success(response): return .success(response)
             case let .failure(err):
-                guard retrys.count > 0 else { return .failure(err) }
+                guard retrys.count > 0,
+                      retrys.condition(err)
+                      else { return .failure(err) }
                 try? await Task.sleep(nanoseconds: UInt64(1_000_000_000 * retrys.delay()))
                 return await performAsync(
                     endpoint: endpoint,
                     headers: headers,
                     queryParams: queryParams,
                     bodyData: bodyData,
-                    retrys: (count: max(0, retrys.count - 1), delay: retrys.delay),
+                    retrys: .init(
+                        count: max(0, retrys.count - 1),
+                        delay: retrys.delay,
+                        condition: retrys.condition
+                    ),
                     fileID: fileID,
                     functionName: functionName,
                     lineNumber: lineNumber
@@ -218,12 +224,17 @@ extension RpcClient: IRpcAsyncClient {
         switch await get(url: url, headers: headers, fileID: fileID, functionName: functionName, lineNumber: lineNumber) {
             case let .success(response): return .success(response)
             case let .failure(err):
-                guard retrys.count > 0 else { return .failure(err) }
+                guard retrys.count > 0,
+                      retrys.condition(err)
+                      else { return .failure(err) }
                 try? await Task.sleep(nanoseconds: UInt64(1_000_000_000 * retrys.delay()))
                 return await get(
                     url: url,
                     headers: headers,
-                    retrys: (count: max(0, retrys.count - 1), delay: retrys.delay),
+                    retrys: .init(
+                        count: max(0, retrys.count - 1),
+                        delay: retrys.delay
+                    ),
                     fileID: fileID,
                     functionName: functionName,
                     lineNumber: lineNumber
