@@ -1,6 +1,5 @@
 import Foundation
 
-@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 public enum WSClientError: Error {
     case notConfigured
     case disconnected

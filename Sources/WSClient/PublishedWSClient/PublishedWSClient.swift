@@ -1,7 +1,6 @@
 import Foundation
 import Combine
 
-@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 public protocol IPublishedWSClient: Sendable {
     typealias ConnectionStatus = PublishedWSClient.UrlSessionDelegate.Status
     typealias Config = PublishedWSClient.Config
@@ -17,7 +16,6 @@ public protocol IPublishedWSClient: Sendable {
     var connectionPublisher: Published<ConnectionStatus>.Publisher { get async }
 }
 
-@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
     private var internalKeepConnected: Toggle = .off
 
@@ -29,7 +27,13 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
 
     nonisolated
     private var instanceId: String { ObjectIdentifier(self).debugDescription }
-    private var currentDateStr: String { Date.now.formatted(date: .omitted, time: .standard) }
+    private var currentDateStr: String {
+        if #available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
+            Date().formatted(date: .omitted, time: .standard)
+        } else {
+            Date().description
+        }
+    }
     private var config: Config?
     
     private let logger: any HttpClientLogging
@@ -44,11 +48,11 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
         } else {
             self.delegate = UrlSessionDelegate(logger: logger)
         }
-        logger.log(">>>> ws init: \(self.instanceId)")
+        logger.log(">>> ws init: \(self.instanceId)")
     }
 
     deinit {
-        logger.log(">>>> ws deinit: \(self.instanceId)")
+        logger.log(">>> ws deinit: \(self.instanceId)")
     }
 
     private var msgSubj = PassthroughSubject<Result<Data?, Err>, Never>()

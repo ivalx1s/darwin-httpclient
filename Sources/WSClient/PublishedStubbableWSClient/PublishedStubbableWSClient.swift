@@ -1,7 +1,6 @@
 import Foundation
 import Combine
 
-@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 public protocol IPublishedStubbableWSClient: IPublishedWSClient {
     typealias Stub = PublishedStubbableWSClient.Stub
 
@@ -9,7 +8,6 @@ public protocol IPublishedStubbableWSClient: IPublishedWSClient {
     func setStubs(_ stubs: [Stub]) async
 }
 
-@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 public actor PublishedStubbableWSClient {
     private let internalMsgSub: PassthroughSubject<Result<Data?, WSClientError>, Never> = .init()
     private var internalMsgPub: AnyPublisher<Result<Data?, WSClientError>, Never> {
