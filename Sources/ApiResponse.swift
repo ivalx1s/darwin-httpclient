@@ -6,7 +6,10 @@ public struct ApiResponse: Sendable {
     public let code: ResponseCode
 
     public func headerValue(forKey: String) -> String? {
-        headers.first { "\($0.key)".lowercased() == forKey.lowercased()}?.value as? String
+        headers
+            .first { "\($0.key)".lowercased() == forKey.lowercased() }?
+            .value
+            .payload as? String
     }
 
     public init(

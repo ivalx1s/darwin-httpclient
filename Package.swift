@@ -5,9 +5,9 @@ let package = Package(
     name: "darwin-httpclient",
 	platforms: [
 		.iOS(.v13),
-		.watchOS(.v8),
-		.macOS(.v12),
-        .tvOS(.v15),
+		.watchOS(.v6),
+		.macOS(.v11),
+        .tvOS(.v13),
 	],
     products: [
         .library(
@@ -20,6 +20,11 @@ let package = Package(
             name: "HttpClient",
             dependencies: [],
 			path: "Sources"
-		)
+		),
+        .testTarget(
+            name: "HttpClientTests",
+            dependencies: ["HttpClient"],
+            path: "Tests"
+        )
     ]
 )

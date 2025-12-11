@@ -1,5 +1,7 @@
 import Foundation
 
+#warning("WSClient is experimental; prefer PublishedWSClient until stabilized")
+
 public protocol IWSClient {
     func connect(to urlPath : String, with headers: Headers) async -> Result<AsyncStream<Result<Data, WSClientError>>, WSClientError>
     func disconnect() async
@@ -8,16 +10,21 @@ public protocol IWSClient {
 }
 
 public actor WSClient: IWSClient, IRequestBuilder {
-    private var webSocketTask: URLSessionWebSocketTask?
+    public typealias WebSocketTaskFactory = @Sendable (URLRequest, URLSession) -> WebSocketTasking
+
+    private var webSocketTask: WebSocketTasking?
     private let urlSession: URLSession
     private let logger: any HttpClientLogging
+    private let webSocketTaskFactory: WebSocketTaskFactory
     
     public init(
         urlSession: URLSession,
-        logger: any HttpClientLogging = DefaultLogger.shared
+        logger: any HttpClientLogging = DefaultLogger.shared,
+        webSocketTaskFactory: WebSocketTaskFactory? = nil
     ) {
         self.urlSession = urlSession
         self.logger = logger
+        self.webSocketTaskFactory = webSocketTaskFactory ?? Self.defaultWebSocketTaskFactory
     }
 
     public init(
@@ -25,10 +32,12 @@ public actor WSClient: IWSClient, IRequestBuilder {
             timeoutForResponse: 20,
             timeoutResourceInterval: 120
         ),
-        logger: any HttpClientLogging = DefaultLogger.shared
+        logger: any HttpClientLogging = DefaultLogger.shared,
+        webSocketTaskFactory: WebSocketTaskFactory? = nil
     ) {
         self.urlSession = URLSession(configuration: sessionConfig)
         self.logger = logger
+        self.webSocketTaskFactory = webSocketTaskFactory ?? Self.defaultWebSocketTaskFactory
     }
 
     public func connect(to urlPath : String, with headers: Headers) async -> Result<AsyncStream<Result<Data, WSClientError>>, WSClientError> {
@@ -36,7 +45,7 @@ public actor WSClient: IWSClient, IRequestBuilder {
             return .failure(WSClientError.failedToBuildRequest(forUrlPath: urlPath))
         }
         let request = Self.buildWSRequest(url: url, headers: headers)
-        webSocketTask = urlSession.webSocketTask(with: request)
+        webSocketTask = webSocketTaskFactory(request, urlSession)
         webSocketTask?.resume()
 
         return .success(streamMessages())
@@ -103,5 +112,9 @@ public actor WSClient: IWSClient, IRequestBuilder {
         } catch {
             return .failure(.failedToSend(msg: msg, cause: error))
         }
+    }
+
+    static func defaultWebSocketTaskFactory(request: URLRequest, session: URLSession) -> WebSocketTasking {
+        session.webSocketTask(with: request)
     }
 }

@@ -1,7 +1,5 @@
 import Foundation
 
-extension Result: Sendable where Success: Sendable, Failure: Sendable {}
-
 public protocol IRpcAsyncClient: Sendable {
     func get(
         url: URL,

@@ -1,6 +1,17 @@
 import Foundation
 import Combine
 
+@preconcurrency public protocol WebSocketTasking: AnyObject, Sendable {
+    var closeCode: URLSessionWebSocketTask.CloseCode { get }
+    func resume()
+    func cancel(with closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?)
+    func send(_ message: URLSessionWebSocketTask.Message) async throws
+    func sendPing(pongReceiveHandler: @Sendable @escaping (Error?) -> Void)
+    func receive() async throws -> URLSessionWebSocketTask.Message
+}
+
+extension URLSessionWebSocketTask: @unchecked Sendable, WebSocketTasking {}
+
 public protocol IPublishedWSClient: Sendable {
     typealias ConnectionStatus = PublishedWSClient.UrlSessionDelegate.Status
     typealias Config = PublishedWSClient.Config
@@ -17,10 +28,13 @@ public protocol IPublishedWSClient: Sendable {
 }
 
 public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
+    public typealias WebSocketTaskFactory = @Sendable (URLRequest, URLSessionConfiguration, UrlSessionDelegate) -> WebSocketTasking
+    public typealias KeepAlivePublisherFactory = @Sendable (TimeInterval) -> AnyPublisher<Date, Never>
+
     private var internalKeepConnected: Toggle = .off
 
     private var keepConnected: Toggle { get { internalKeepConnected } }
-    private var webSocketTask: URLSessionWebSocketTask?
+    private var webSocketTask: WebSocketTasking?
     private var keepAliveSubscription: AnyCancellable?
     private let delegate: UrlSessionDelegate
     private var receiveMessagesTask : Task<Void, any Error>?
@@ -37,12 +51,18 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
     private var config: Config?
     
     private let logger: any HttpClientLogging
+    private let webSocketTaskFactory: WebSocketTaskFactory
+    private let keepAlivePublisherFactory: KeepAlivePublisherFactory
 
     public init(
         logger: any HttpClientLogging = DefaultLogger.shared,
-        delegate: UrlSessionDelegate? = nil
+        delegate: UrlSessionDelegate? = nil,
+        webSocketTaskFactory: WebSocketTaskFactory? = nil,
+        keepAlivePublisherFactory: KeepAlivePublisherFactory? = nil
     ) {
         self.logger = logger
+        self.webSocketTaskFactory = webSocketTaskFactory ?? Self.defaultWebSocketTaskFactory
+        self.keepAlivePublisherFactory = keepAlivePublisherFactory ?? Self.defaultKeepAlivePublisherFactory
         if let delegate {
             self.delegate = delegate
         } else {
@@ -78,9 +98,7 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
         }
 
         let request = Self.buildWSRequest(url: url, headers: await config.headers())
-        let urlSession = URLSession(configuration: config.sessionConfig, delegate: delegate, delegateQueue: nil)
-
-        let webSocketTask = urlSession.webSocketTask(with: request)
+        let webSocketTask = webSocketTaskFactory(request, config.sessionConfig, delegate)
         logger.log(">>> ws \(instanceId) configure wsSocketTaskId \(ObjectIdentifier(webSocketTask))")
         self.webSocketTask = webSocketTask
 
@@ -93,7 +111,7 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
     public func connect() async -> Result<Void, Err> {
         logger.log(">>> ws \(instanceId) \(currentDateStr) connect start \(keepConnected)")
 
-        guard let webSocketTask = webSocketTask
+        guard let webSocketTask
         else { return .failure(.notConfigured) }
 
         logger.log(">>> ws \(instanceId) connect wsSocketTaskId \(ObjectIdentifier(webSocketTask))")
@@ -145,7 +163,7 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
     }
 
     private func setupKeepAlivePipeline(with pingDelay: TimeInterval) {
-        self.keepAliveSubscription = Timer.publish(every: pingDelay, on: .main, in: .common).autoconnect()
+        self.keepAliveSubscription = keepAlivePublisherFactory(pingDelay)
             .sink { [weak self] _ in
                 guard let self,
                       case .on = await self.keepConnected,
@@ -220,5 +238,14 @@ public actor PublishedWSClient: IPublishedWSClient, IRequestBuilder {
             logger.log(">>> ws \(instanceId) message send failed: \(msg) \(error)")
             return .failure(.failedToSend(msg: msg, cause: error))
         }
+    }
+
+    static func defaultWebSocketTaskFactory(request: URLRequest, sessionConfig: URLSessionConfiguration, delegate: UrlSessionDelegate) -> WebSocketTasking {
+        URLSession(configuration: sessionConfig, delegate: delegate, delegateQueue: nil)
+            .webSocketTask(with: request)
+    }
+
+    static func defaultKeepAlivePublisherFactory(_ pingDelay: TimeInterval) -> AnyPublisher<Date, Never> {
+        Timer.publish(every: pingDelay, on: .main, in: .common).autoconnect().eraseToAnyPublisher()
     }
 }

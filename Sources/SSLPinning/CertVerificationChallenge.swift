@@ -69,8 +69,9 @@ open class CertVerificationChallenge: NSObject, ICertVerificationChallenge, @unc
             }
         } else {
             logger.log("Challenge failed, no implementation for ios < 15")
-            return
+            completionHandler(.performDefaultHandling, nil)
         }
+
     }
 }
 
