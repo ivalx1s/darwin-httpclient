@@ -2,7 +2,6 @@ import Foundation
 
 public protocol ICertVerificationChallenge: URLSessionDelegate {}
 
-@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 extension CertVerificationChallenge {
     public enum ValidationStrategy {
         case anyCertFromChain
@@ -10,7 +9,6 @@ extension CertVerificationChallenge {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 open class CertVerificationChallenge: NSObject, ICertVerificationChallenge, @unchecked Sendable {
     let certUrls: [URL]
     let validationStrategy: ValidationStrategy
@@ -43,42 +41,51 @@ open class CertVerificationChallenge: NSObject, ICertVerificationChallenge, @unc
             return
         }
 
-        guard let certificateChain = SecTrustCopyCertificateChain(trust) as? [SecCertificate]
-        else {
-            logger.log("Challenge failed:, unable to create cert chain")
-            completionHandler(.cancelAuthenticationChallenge, nil)
-            return
+        if #available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
+            guard let certificateChain = SecTrustCopyCertificateChain(trust) as? [SecCertificate]
+            else {
+                logger.log("Challenge failed:, unable to create cert chain")
+                completionHandler(.cancelAuthenticationChallenge, nil)
+                return
+            }
+
+            switch validationStrategy {
+            case .anyCertFromChain:
+                switch Set(certificateChain).intersection(pinnedCerts).isEmpty {
+                case true:
+                    logger.log("Challenge failed, no pinned cert intersection found")
+                    completionHandler(.cancelAuthenticationChallenge, nil)
+                case false:
+                    completionHandler(.useCredential, URLCredential(trust: trust))
+                }
+            case .allCertsFromChain:
+                switch Set(certificateChain).subtracting(pinnedCerts).isEmpty {
+                case false:
+                    logger.log("Challenge failed, no pinned cert intersection found")
+                    completionHandler(.cancelAuthenticationChallenge, nil)
+                case true:
+                    completionHandler(.useCredential, URLCredential(trust: trust))
+                }
+            }
+        } else {
+            logger.log("Challenge failed, no implementation for ios < 15")
+            completionHandler(.performDefaultHandling, nil)
         }
 
-        switch validationStrategy {
-        case .anyCertFromChain:
-            switch Set(certificateChain).intersection(pinnedCerts).isEmpty {
-            case true:
-                logger.log("Challenge failed, no pinned cert intersection found")
-                completionHandler(.cancelAuthenticationChallenge, nil)
-            case false:
-                completionHandler(.useCredential, URLCredential(trust: trust))
-            }
-        case .allCertsFromChain:
-            switch Set(certificateChain).subtracting(pinnedCerts).isEmpty {
-            case false:
-                logger.log("Challenge failed, no pinned cert intersection found")
-                completionHandler(.cancelAuthenticationChallenge, nil)
-            case true:
-                completionHandler(.useCredential, URLCredential(trust: trust))
-            }
-        }
     }
 }
 
-@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 public final class CertPublicKeyVerificationChallenge: CertVerificationChallenge, @unchecked Sendable {
     private lazy var pinnedCertsKeys: Set<CFData> = {
-        Set(
-            self.pinnedCerts
-                .compactMap { $0.secTrust?.secKey }
-                .compactMap { $0.data }
-        )
+        if #available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
+            Set(
+                self.pinnedCerts
+                    .compactMap { $0.secTrust?.secKey }
+                    .compactMap { $0.data }
+            )
+        } else {
+            []
+        }
     }()
 
     override public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
@@ -90,32 +97,37 @@ public final class CertPublicKeyVerificationChallenge: CertVerificationChallenge
             return
         }
 
-        guard let certificateChain = SecTrustCopyCertificateChain(trust) as? [SecCertificate]
-        else {
-            logger.log("Challenge failed:, unable to create cert chain")
-            completionHandler(.cancelAuthenticationChallenge, nil)
+        if #available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
+            guard let certificateChain = SecTrustCopyCertificateChain(trust) as? [SecCertificate]
+            else {
+                logger.log("Challenge failed:, unable to create cert chain")
+                completionHandler(.cancelAuthenticationChallenge, nil)
+                return
+            }
+
+            let serverKeys = certificateChain.compactMap { $0.secTrust?.secKey?.data }
+
+            switch validationStrategy {
+            case .anyCertFromChain:
+                switch Set(serverKeys).intersection(pinnedCertsKeys).isEmpty {
+                case true:
+                    logger.log("Challenge failed, no pinned cert intersection found")
+                    completionHandler(.cancelAuthenticationChallenge, nil)
+                case false:
+                    completionHandler(.useCredential, URLCredential(trust: trust))
+                }
+            case .allCertsFromChain:
+                switch Set(serverKeys).subtracting(pinnedCertsKeys).isEmpty {
+                case false:
+                    logger.log("Challenge failed, no pinned cert intersection found")
+                    completionHandler(.cancelAuthenticationChallenge, nil)
+                case true:
+                    completionHandler(.useCredential, URLCredential(trust: trust))
+                }
+            }
+        } else {
+            logger.log("Challenge failed, no implementation for ios < 15")
             return
-        }
-
-        let serverKeys = certificateChain.compactMap { $0.secTrust?.secKey?.data }
-
-        switch validationStrategy {
-        case .anyCertFromChain:
-            switch Set(serverKeys).intersection(pinnedCertsKeys).isEmpty {
-            case true:
-                logger.log("Challenge failed, no pinned cert intersection found")
-                completionHandler(.cancelAuthenticationChallenge, nil)
-            case false:
-                completionHandler(.useCredential, URLCredential(trust: trust))
-            }
-        case .allCertsFromChain:
-            switch Set(serverKeys).subtracting(pinnedCertsKeys).isEmpty {
-            case false:
-                logger.log("Challenge failed, no pinned cert intersection found")
-                completionHandler(.cancelAuthenticationChallenge, nil)
-            case true:
-                completionHandler(.useCredential, URLCredential(trust: trust))
-            }
         }
     }
 }
@@ -137,6 +149,7 @@ extension SecCertificate {
     }
 }
 
+@available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 extension SecTrust {
     var secKey: SecKey? {
         SecTrustCopyKey(self)

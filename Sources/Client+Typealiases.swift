@@ -10,9 +10,6 @@ public typealias ResponseHeaders = [String: UncheckedSendableWrapper<Any>]
 public typealias ResponseCode = Int
 public typealias RequestRetrys = (count: UInt, delay: @Sendable () -> TimeInterval)
 
-extension ResponseHeaders: Sendable {}
-extension ResponseCode: Sendable {}
-
 public extension ResponseCode {
     var statusOK: Bool { self == 200 }
     var statusCreated: Bool { self == 201 }
